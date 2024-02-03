@@ -1,0 +1,13 @@
+sam:
+  GROUNDING_DINO_CONFIG_PATH: "GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
+  GROUNDING_DINO_CHECKPOINT_PATH: "./groundingdino_swint_ogc.pth"
+  SAM_ENCODER_VERSION: "vit_h"
+  SAM_CHECKPOINT_PATH: "./sam_vit_h_4b8939.pth"
+  BOX_THRESHOLD: 0.25
+  TEXT_THRESHOLD: 0.25
+  NMS_THRESHOLD: 0.8
+dino:
+  GROUNDING_DINO_CONFIG_PATH: "GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
+  GROUNDING_DINO_CHECKPOINT_PATH: "./groundingdino_swint_ogc.pth"
+  BOX_THRESHOLD: 0.35
+  TEXT_THRESHOLD: 0.25
