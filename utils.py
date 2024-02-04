@@ -4,12 +4,6 @@ import os
 import sys
 
 
-def setup(rank, world_size):
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12356'
-    dist.init_process_group("gloo", rank=rank, world_size=world_size)
-
-
 def collate_fn(batch):
     """
     This function solves the problem when some data samples in a batch are None.

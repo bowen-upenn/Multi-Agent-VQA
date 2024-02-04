@@ -2,13 +2,13 @@ import numpy as np
 import torch
 import torchvision
 import torch.optim as optim
-from torch.utils.data import Subset
+from torch.utils.data import Subset, DataLoader
 import yaml
 import os
 import json
-import torch.multiprocessing as mp
 import argparse
 
+from utils import *
 from inference import inference
 from dataloader import GQADataset#, VisualGenomeDataset, SNLIVEDataset, CLEVRobotDataset, AI2THORDataset
 
@@ -32,6 +32,7 @@ if __name__ == "__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size = torch.cuda.device_count()
+    assert world_size == 1
     print('device', device)
     print('torch.distributed.is_available', torch.distributed.is_available())
     print('Using %d GPUs' % (torch.cuda.device_count()))
@@ -43,8 +44,9 @@ if __name__ == "__main__":
     torch.manual_seed(0)
     test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
     test_subset = Subset(test_dataset, test_subset_idx)
+    test_loader = DataLoader(test_subset, batch_size=1, shuffle=True, collate_fn=collate_fn, num_workers=0, drop_last=True)
     print('num of train, test:', 0, len(test_subset))
 
     # Start inference
     print(args)
-    mp.spawn(inference, nprocs=world_size, args=(args, test_subset))
+    inference(device, args, test_loader)

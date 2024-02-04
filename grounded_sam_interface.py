@@ -14,7 +14,7 @@ from segment_anything import sam_model_registry, SamPredictor
 from groundingdino.util.inference import load_model, load_image, predict, annotate
 
 
-def query_grounding_dino(rank, args, model, image_path, text_prompt="bear."):
+def query_grounding_dino(device, args, model, image_path, text_prompt="bear."):
     # # Example code to init the GroundingDINO model
     # model = load_model("GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py", "./groundingdino_swint_ogc.pth")
     # If you want to detect multiple objects in one sentence with Grounding DINO, we suggest separating each name with . . 
@@ -27,7 +27,8 @@ def query_grounding_dino(rank, args, model, image_path, text_prompt="bear."):
         image=image,
         caption=text_prompt,
         box_threshold=args['dino']['BOX_THRESHOLD'],
-        text_threshold=args['dino']['TEXT_THRESHOLD']
+        text_threshold=args['dino']['TEXT_THRESHOLD'],
+        device=device
     )
 
     # annotated_frame = annotate(image_source=image_source, boxes=boxes, logits=logits, phrases=phrases)
