@@ -17,11 +17,12 @@ class QueryLLM:
 
     def messages_to_extract_objects_of_interest(self, prompt):
         messages = [
-            {"role": "system", "content": "You are a language assistant."},
-            {"role": "user", "content": "Please extract all objects mentioned in the following sentence, and separate each object with '.': "
-                                        "Is there a red apple on the table?"},
-            {"role": "assistant", "content": "Red apple . Table ."},
-            {"role": "user", "content": "Please extract all objects mentioned in the following sentence, and separate each object with '.': " + prompt}
+            {"role": "system", "content": "Please extract object mentioned in the following sentence. "
+                                        "For this task, focus solely on tangible objects that can be visually identified in an image, "
+                                        "and separate each object with '.' if there are more than one objects. "
+                                        "For example, in the sentence '[Question] Is there a red apple on the table?' you should extract 'Red apple. Table.' "
+                                        "and in the sentence '[Question] Are these animals of the same species?' you should extract 'Animals' "},
+            {"role": "user", "content": '[Question] ' + prompt}
         ]
         return messages
 
@@ -54,11 +55,12 @@ class QueryLLM:
         return responses
 
 
-    def _query_openai_gpt_3p5(self, prompt, step, verbose=False):
+    def _query_openai_gpt_3p5(self, prompt, step, verbose=True):
         client = OpenAI(api_key=self.api_key)
 
         if step == 'related_objects':
             messages = self.messages_to_extract_objects_of_interest(prompt)
+            print('messages:', messages)
         else:
             raise ValueError(f'Invalid step: {step}')
 
@@ -66,8 +68,9 @@ class QueryLLM:
             model="gpt-3.5-turbo",
             messages=messages,
         )
+        print('response:', response)
 
-        message = response['choices'][0]['message']['content']
+        message = response.choices[0].message.content
         if verbose:
             print(f'Response: {message}')
 
