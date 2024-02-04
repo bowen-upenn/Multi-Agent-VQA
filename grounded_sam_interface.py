@@ -20,10 +20,11 @@ def query_grounding_dino(device, args, model, image_path, text_prompt="bear."):
     # If you want to detect multiple objects in one sentence with Grounding DINO, we suggest separating each name with . . 
     # An example: cat . dog . chair .
 
+    print('image_path', image_path)
     image_source, image = load_image(image_path)
 
     boxes, logits, phrases = predict(
-        model=model,
+        model=model.to(device),
         image=image,
         caption=text_prompt,
         box_threshold=args['dino']['BOX_THRESHOLD'],

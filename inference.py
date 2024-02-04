@@ -5,7 +5,7 @@ import sys
 sys.path.append('./Grounded-Segment-Anything')
 
 from grounded_sam_interface import query_grounded_sam, query_grounding_dino
-from groundingdino.util.inference import Model as DINO
+from groundingdino.util.inference import load_model
 
 from utils import *
 from query_vlm import QueryVLM
@@ -14,7 +14,7 @@ from query_llm import QueryLLM
 
 def inference(device, args, test_loader):
     # Building GroundingDINO inference model
-    grounding_dino_model = DINO(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
+    grounding_dino_model = load_model(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
     LLM, VLM = QueryLLM(), QueryVLM()
 
     with torch.no_grad():
@@ -28,7 +28,7 @@ def inference(device, args, test_loader):
             print('related_objects', related_objects)
 
             # query grounded sam on the input image 
-            boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino_model, image_path, text_prompt=related_objects)
+            boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino_model, image_path[0], text_prompt=related_objects)
             print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases)
 
             # find all object instances in the scene

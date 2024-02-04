@@ -55,12 +55,11 @@ class QueryLLM:
         return responses
 
 
-    def _query_openai_gpt_3p5(self, prompt, step, verbose=True):
+    def _query_openai_gpt_3p5(self, prompt, step, verbose=False):
         client = OpenAI(api_key=self.api_key)
 
         if step == 'related_objects':
             messages = self.messages_to_extract_objects_of_interest(prompt)
-            print('messages:', messages)
         else:
             raise ValueError(f'Invalid step: {step}')
 
