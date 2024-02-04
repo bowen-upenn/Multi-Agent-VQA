@@ -18,14 +18,12 @@ def inference(device, args, test_loader):
 
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
-            try:
-                image_id, image_path, question, answer = data['image_id'], data['image_path'], data['question'], data['answer']
-            except:
-                continue
+            print('data', data)
+            image_id, image_path, question, answer = data['image_id'], data['image_path'], data['question'], data['answer']
 
             # extract related object instances from the task prompt
             print('question', question)
-            related_objects = QueryLLM.query_llm(prompts, llm_model=args['llm']['llm_model'], step='related_objects')
+            related_objects = QueryLLM.query_llm(question, llm_model=args['llm']['llm_model'], step='related_objects')
             print('related_objects', related_objects)
 
             # query grounded sam on the input image 

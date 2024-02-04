@@ -24,11 +24,12 @@ class GQADataset(Dataset):
         return len(self.questions)
 
     def __getitem__(self, idx):
-        annot = self.questions[idx]
+        annot = self.questions[list(self.questions.keys())[idx]]
 
         image_id = annot['imageId']
         image_path = os.path.join(self.images_dir, f"{annot['imageId']}.jpg")
         question = annot['question']
         answer = annot['answer']
+        print('image_path:', image_path, 'question:', question, 'answer:', answer)
 
         return {'image_id': image_id, 'image_path': image_path, 'question': question, 'answer': answer}
