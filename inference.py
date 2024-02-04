@@ -2,17 +2,19 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from tqdm import tqdm
 import os
-import sys
 
+import sys
 sys.path.append('./Grounded-Segment-Anything')
 
-from grounded_sam_simple_demo import query_grounded_sam, query_grounding_dino
+from grounded_sam_interface import query_grounded_sam, query_grounding_dino
 from groundingdino.util.inference import Model as DINO
 
 from utils import *
+from query_vlm import QueryVLM
+from query_llm import QueryLLM
 
 
-def inference(gpu, args, test_subset)
+def inference(gpu, args, test_subset):
     rank = gpu
     world_size = torch.cuda.device_count()
     setup(rank, world_size)
@@ -29,12 +31,18 @@ def inference(gpu, args, test_subset)
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
             try:
-                image_path, task_prompt, task_answer = data
+                image_id, image_path, question, answer = data['image_id'], data['image_path'], data['question'], data['answer']
             except:
                 continue
 
+            # extract related object instances from the task prompt
+            print('question', question)
+            related_objects = QueryLLM.query_llm(prompts, llm_model=args['llm']['llm_model'], step='related_objects')
+            print('related_objects', related_objects)
+
             # query grounded sam on the input image 
-            boxes, logits, phrases = query_grounding_dino(rank, args, grounding_dino_model, image_path, text_prompt=task_prompt)
+            boxes, logits, phrases = query_grounding_dino(rank, args, grounding_dino_model, image_path, text_prompt=related_objects)
+            print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases)
 
             # find all object instances in the scene
 

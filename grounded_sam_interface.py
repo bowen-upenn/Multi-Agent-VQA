@@ -7,6 +7,9 @@ import supervision as sv
 import torch
 import torchvision
 
+import sys
+sys.path.append('./Grounded-Segment-Anything')
+
 from segment_anything import sam_model_registry, SamPredictor
 from groundingdino.util.inference import load_model, load_image, predict, annotate
 

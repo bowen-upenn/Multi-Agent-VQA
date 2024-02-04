@@ -9,12 +9,13 @@ import json
 import torch.multiprocessing as mp
 import argparse
 
-from dataloader import VisualGenomeDataset, GQADataset, SNLIVEDataset, CLEVRobotDataset, AI2THORDataset
+from inference import inference
+from dataloader import GQADataset#, VisualGenomeDataset, SNLIVEDataset, CLEVRobotDataset, AI2THORDataset
 
 
 if __name__ == "__main__":
     print('Torch', torch.__version__, 'Torchvision', torchvision.__version__)
-    # load hyperparameters
+    # Load hyperparameters
     try:
         with open('config.yaml', 'r') as file:
             args = yaml.safe_load(file)
@@ -34,19 +35,16 @@ if __name__ == "__main__":
     print('device', device)
     print('torch.distributed.is_available', torch.distributed.is_available())
     print('Using %d GPUs' % (torch.cuda.device_count()))
-    print("Running model", args['models']['detr_or_faster_rcnn'])
 
-    # prepare datasets
+    # Prepare datasets
     print("Loading the datasets...")
-    test_dataset = VisualGenomeDataset(args, device, args['dataset']['annotation_test'], training=False)    # always evaluate on the original testing dataset
+    test_dataset = GQADataset(args)
 
     torch.manual_seed(0)
-    test_subset_idx = torch.randperm(len(test_dataset))[:int(args['dataset']['percent_test'] * len(test_dataset))]
+    test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
     test_subset = Subset(test_dataset, test_subset_idx)
     print('num of train, test:', 0, len(test_subset))
 
+    # Start inference
     print(args)
-    if args['training']['run_mode'] == 'inference':
-         mp.spawn(inference, nprocs=world_size, args=(args, test_subset))
-    else:
-        print('Invalid arguments.')
+    mp.spawn(inference, nprocs=world_size, args=(args, test_subset))

@@ -3,8 +3,6 @@ import numpy as np
 from tqdm import tqdm
 import os
 import json
-import openai
-# from openai import OpenAI
 import random
 import cv2
 import base64

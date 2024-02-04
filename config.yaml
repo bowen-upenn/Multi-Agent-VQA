@@ -1,13 +1,19 @@
+datasets:
+  gqa_images_dir: '/tmp/datasets/gqa/images'
+  gqa_questions_file: '/tmp/datasets/gqa/testdev_balanced_questions.json'
+  percent_test: 0.01
 sam:
-  GROUNDING_DINO_CONFIG_PATH: "GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
-  GROUNDING_DINO_CHECKPOINT_PATH: "./groundingdino_swint_ogc.pth"
+  GROUNDING_DINO_CONFIG_PATH: "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
+  GROUNDING_DINO_CHECKPOINT_PATH: "Grounded-Segment-Anything/groundingdino_swint_ogc.pth"
   SAM_ENCODER_VERSION: "vit_h"
-  SAM_CHECKPOINT_PATH: "./sam_vit_h_4b8939.pth"
+  SAM_CHECKPOINT_PATH: "Grounded-Segment-Anything/sam_vit_h_4b8939.pth"
   BOX_THRESHOLD: 0.25
   TEXT_THRESHOLD: 0.25
   NMS_THRESHOLD: 0.8
 dino:
-  GROUNDING_DINO_CONFIG_PATH: "GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
-  GROUNDING_DINO_CHECKPOINT_PATH: "./groundingdino_swint_ogc.pth"
+  GROUNDING_DINO_CONFIG_PATH: "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
+  GROUNDING_DINO_CHECKPOINT_PATH: "Grounded-Segment-Anything/groundingdino_swint_ogc.pth"
   BOX_THRESHOLD: 0.35
   TEXT_THRESHOLD: 0.25
+llm:
+  llm_model: 'gpt-3.5-turbo'
