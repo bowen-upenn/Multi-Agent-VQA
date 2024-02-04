@@ -15,6 +15,7 @@ from query_llm import QueryLLM
 def inference(device, args, test_loader):
     # Building GroundingDINO inference model
     grounding_dino_model = DINO(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
+    LLM, VLM = QueryLLM(), QueryVLM()
 
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
@@ -23,7 +24,7 @@ def inference(device, args, test_loader):
 
             # extract related object instances from the task prompt
             print('question', question)
-            related_objects = QueryLLM.query_llm(question, llm_model=args['llm']['llm_model'], step='related_objects')
+            related_objects = LLM.query_llm(question, llm_model=args['llm']['llm_model'], step='related_objects')
             print('related_objects', related_objects)
 
             # query grounded sam on the input image 

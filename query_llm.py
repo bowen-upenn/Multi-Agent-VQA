@@ -26,7 +26,7 @@ class QueryLLM:
         return messages
 
 
-    def query_llm(self, prompts, max_batch_size=4, llm_model='gpt-3.5-turbo', step='related_objects'):
+    def query_llm(self, prompts, llm_model='gpt-3.5-turbo', step='related_objects', max_batch_size=4):
         # query on a single image
         if len(prompts) == 1:
             if llm_model == 'gpt-4':
@@ -55,7 +55,7 @@ class QueryLLM:
 
 
     def _query_openai_gpt_3p5(self, prompt, step, verbose=False):
-        client = OpenAI()
+        client = OpenAI(api_key=self.api_key)
 
         if step == 'related_objects':
             messages = self.messages_to_extract_objects_of_interest(prompt)
