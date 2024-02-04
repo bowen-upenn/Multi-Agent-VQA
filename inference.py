@@ -27,7 +27,9 @@ def inference(device, args, test_loader):
             related_objects = LLM.query_llm(question, llm_model=args['llm']['llm_model'], step='related_objects')
             print('related_objects', related_objects)
 
-            # query grounded sam on the input image 
+            # query grounded sam on the input image
+            # the 'boxes' is a tensor of shape (N, 4) where N is the number of object instances in the image,
+            # the 'logits' is a tensor of shape (N), and the 'phrases' is a list of length (N) such as ['table', 'door']
             boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino_model, image_path[0], text_prompt=related_objects)
             print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases)
 
