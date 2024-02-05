@@ -20,7 +20,7 @@ class QueryLLM:
             {"role": "system", "content": "Please extract object mentioned in the following sentence. "
                                         "For this task, focus solely on tangible objects that can be visually identified in an image, "
                                         "and do not include names like 'Image' if the question asks if there are any certain objects in the image. "
-                                        "Separate each object with '.' if there are more than one objects."
+                                        "Separate each object with '.' if there are more than one objects. "
                                         "For example, in the sentence '[Question] Is there a red apple on the table?' you should extract 'Red apple. Table.' "
                                         "and in the sentence '[Question] Are these animals of the same species?' you should extract 'Animals' "},
             {"role": "user", "content": '[Question] ' + prompt}

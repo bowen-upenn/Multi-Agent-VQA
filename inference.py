@@ -4,8 +4,9 @@ import os
 import sys
 sys.path.append('./Grounded-Segment-Anything')
 
-from grounded_sam_interface import query_grounded_sam, query_grounding_dino
+from detections import query_sam, query_grounded_sam, query_grounding_dino
 from groundingdino.util.inference import load_model
+from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 
 from utils import *
 from query_vlm import QueryVLM
@@ -14,7 +15,9 @@ from query_llm import QueryLLM
 
 def inference(device, args, test_loader):
     # Building GroundingDINO inference model
-    grounding_dino_model = load_model(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
+    grounding_dino = load_model(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
+    sam = sam_model_registry[args['sam']['SAM_ENCODER_VERSION']](checkpoint=args['sam']['SAM_CHECKPOINT_PATH']).to(device)
+    sam_mask_generator = SamAutomaticMaskGenerator(sam)
     LLM, VLM = QueryLLM(), QueryVLM()
 
     with torch.no_grad():
@@ -30,10 +33,12 @@ def inference(device, args, test_loader):
             # query grounded sam on the input image
             # the 'boxes' is a tensor of shape (N, 4) where N is the number of object instances in the image,
             # the 'logits' is a tensor of shape (N), and the 'phrases' is a list of length (N) such as ['table', 'door']
-            boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino_model, image_path[0], text_prompt=related_objects)
-            print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases)
+            image, boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino, image_path[0], text_prompt=related_objects)
+            print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases, 'image', image.shape)
 
             # find all object instances in the scene
+            masks = query_sam(device, args, sam_mask_generator, image)
+            print('masks', len(masks))
 
             # find object instances related to the task prompt
 
