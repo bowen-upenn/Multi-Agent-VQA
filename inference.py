@@ -17,7 +17,10 @@ def inference(device, args, test_loader):
     # Building GroundingDINO inference model
     grounding_dino = load_model(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
     sam = sam_model_registry[args['sam']['SAM_ENCODER_VERSION']](checkpoint=args['sam']['SAM_CHECKPOINT_PATH']).to(device)
-    sam_mask_generator = SamAutomaticMaskGenerator(sam)
+    sam_mask_generator = SamAutomaticMaskGenerator(sam,
+                                                   min_mask_region_area=args['sam']['min_mask_region_area'],
+                                                   pred_iou_thresh=args['sam']['pred_iou_thresh'],
+                                                   stability_score_thresh=args['sam']['stability_score_thresh'])
     LLM, VLM = QueryLLM(), QueryVLM()
 
     with torch.no_grad():
@@ -36,15 +39,17 @@ def inference(device, args, test_loader):
             image, boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino, image_path[0], text_prompt=related_objects)
             print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases, 'image', image.shape)
 
-            # find all object instances in the scene
-            masks = query_sam(device, args, sam_mask_generator, image)
-            print('masks', len(masks))
+            if args['inference']['find_nearby_objects']:
+                # find all object instances in the scene
+                masks = query_sam(device, args, sam_mask_generator, image)
+                nearby_boxes = torch.tensor([mask['bbox'] for mask in masks])
+                print('masks', len(masks), masks[0].keys(), masks[0]['bbox'], 'nearby_boxes', nearby_boxes.shape)
 
-            # find object instances related to the task prompt
-
+                nearby_boxes = filter_boxes_pytorch(boxes, nearby_boxes, args['inference']['nearby_bbox_iou_threshold'])
+                print('nearby_boxes', nearby_boxes.shape)
 
             # query a large vision-language agent on the attributes of each object instance
-
+            object_attributes = VLM.query_vlm(image, step='attributes', bboxes=boxes)
 
             # merge attributes and class labels of all objects as a system prompt
 

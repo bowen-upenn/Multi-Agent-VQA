@@ -10,6 +10,9 @@ sam:
   BOX_THRESHOLD: 0.25
   TEXT_THRESHOLD: 0.25
   NMS_THRESHOLD: 0.8
+  min_mask_region_area: 1024
+  pred_iou_thresh: 0.9
+  stability_score_thresh: 0.98
 dino:
   GROUNDING_DINO_CONFIG_PATH: "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
   GROUNDING_DINO_CHECKPOINT_PATH: "Grounded-Segment-Anything/groundingdino_swint_ogc.pth"
@@ -17,3 +20,6 @@ dino:
   TEXT_THRESHOLD: 0.25
 llm:
   llm_model: 'gpt-3.5-turbo'
+inference:
+  find_nearby_objects: False
+  nearby_bbox_iou_threshold: 0.5
