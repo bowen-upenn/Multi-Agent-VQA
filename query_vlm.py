@@ -72,30 +72,46 @@ class QueryVLM:
         return message
 
 
-    def messages_to_query_relations(self, question, obj_descriptions):
-        message = "This is an image that contains the following objects with their descriptions, separated by the semi-colon ';': "
+    def messages_to_query_relations(self, question, obj_descriptions, prev_answer):
+        message = "After a previous attempt to answer the question '" + question + "' with the image, the response was not successful, " \
+                  "highlighting the need for more detailed object detection and analysis. Here is the feedback from that attempt [Previous Failed Answer: " + prev_answer + "] " \
+                  "To address this, we've identified additional objects within the image. Their descriptions are as follows: "
 
         if isinstance(obj_descriptions[0], list):
             obj_descriptions = [obj for obj in obj_descriptions[0]]
-        for i, obj in enumerate(obj_descriptions):
-            message += "[Object " + str(i) + "] " + obj + "; "
+            for i, obj in enumerate(obj_descriptions):
+                message += "[Object " + str(i) + "] " + obj + "; "
 
-        message += "Please describe the relations between these objects in the image to build a local scene graph, " \
-                   "with a focus on those relations related to solving the question " + question + ". " \
-                   "You can describe the spatial, semantic, possessive relations, the interactions, and the causal relations between objects in one sentence. " \
-                   "Always begin each relation with the notation '[Relation]' and specify which two objects you are currently looking at by saying " \
-                   "[Object i] and [Object j], where 'i' and 'j' are object indices mentioned above. "
+        message += "Based on these descriptions and the image, please outline each key relation between objects that are crucial for answering '" + question + "' in one sentence and ignore the others. " \
+                   "You are encouraged to describe spatial, semantic, possessive relations, interactions, and causal relations between objects to build a local scene graph. " \
+                   "For clarity and structure, begin each description of relation with '[Relation]' and indicate the specific objects involved by saying '[Object i] and [Object j]', " \
+                   "where 'i' and 'j' refer to the object indices provided above. If the question asks about a relation, verify whether it is true in the image. " \
+                   "Finally, using the detailed object descriptions and the newly established scene graph of the image, please re-attempt to answer the visual question '" + question + "' step by step. " \
+                   "Begin your final answer with '[Reattempted Answer]' or '[Reattempted Answer Failed]' if you are still unable to answer the question."
 
-        message += "Finally, given all the information above and the associated image as a whole scene, " \
-                   "please answer the question " + question + " step by step, and always begin your answer with the notation '[Answer]'. "
+        # message = "This is an image that contains the following objects with their descriptions, separated by the semi-colon ';': "
+        #
+        # if isinstance(obj_descriptions[0], list):
+        #     obj_descriptions = [obj for obj in obj_descriptions[0]]
+        # for i, obj in enumerate(obj_descriptions):
+        #     message += "[Object " + str(i) + "] " + obj + "; "
+        #
+        # message += "Please describe the relations between these objects in the image to build a local scene graph, " \
+        #            "with a focus on those relations related to solving the question " + question + ". " \
+        #            "You can describe the spatial, semantic, possessive relations, the interactions, and the causal relations between objects in one sentence. " \
+        #            "Always begin each relation with the notation '[Relation]' and specify which two objects you are currently looking at by saying " \
+        #            "[Object i] and [Object j], where 'i' and 'j' are object indices mentioned above. "
+        #
+        # message += "Finally, given all the information above and the associated image as a whole scene, " \
+        #            "please answer the question " + question + " step by step, and always begin your answer with the notation '[Answer]'. "
 
         return message
 
-    def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, bboxes=None): # "Describe the attributes and the name of the object in the image"
+    def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, prev_answer=None, bboxes=None): # "Describe the attributes and the name of the object in the image"
         responses = []
 
         if step == 'relations' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
-            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions)
+            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer)
             return [response]
 
         # query on a single object
@@ -115,7 +131,7 @@ class QueryVLM:
         return responses
 
 
-    def _query_openai_gpt_4v(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, verbose=True):
+    def _query_openai_gpt_4v(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verbose=True):
         # we have to crop the image before converting it to base64
         base64_image = self.process_image(image, bbox)
 
@@ -126,8 +142,8 @@ class QueryVLM:
                 messages = self.messages_to_query_object_attributes(question, phrase)
             max_tokens = 200
         elif step == 'relations':
-            messages = self.messages_to_query_relations(question, obj_descriptions)
-            max_tokens = 400
+            messages = self.messages_to_query_relations(question, obj_descriptions, prev_answer)
+            max_tokens = 500
         else:
             messages = self.messages_to_answer_directly(question)
             max_tokens = 300

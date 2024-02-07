@@ -28,7 +28,6 @@ def inference(device, args, test_loader):
 
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
-            print('data', data)
             image_id, image_path, question, answer = data['image_id'], data['image_path'], data['question'], data['answer']
             assert len(image_path) == 1
 
@@ -41,7 +40,20 @@ def inference(device, args, test_loader):
             match = re.search(pattern, answer)
             if match:
                 # extract object instances needed to solve the question
-                related_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects')
+                needed_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects')
+
+                # query grounded sam on the input image
+                # the 'boxes' is a tensor of shape (N, 4) where N is the number of object instances in the image,
+                # the 'logits' is a tensor of shape (N), and the 'phrases' is a list of length (N) such as ['table', 'door']
+                image, boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino, image_path[0], text_prompt=needed_objects)
+                print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases, 'image', image.shape)
+
+                # query a large vision-language agent on the attributes of each object instance
+                object_attributes = VLM.query_vlm(image, question[0], step='attributes', phrases=phrases, bboxes=boxes)
+
+                # merge object descriptions as a system prompt
+                reattempt_answer = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes, prev_answer=answer)
+
 
             # extract related object instances from the task prompt
             # related_objects = LLM.query_llm(question, llm_model=args['llm']['llm_model'], step='related_objects')

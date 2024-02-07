@@ -33,13 +33,12 @@ class QueryLLM:
         messages = [
             {"role": "system", "content": "Based on the response provided by a large vision-language model (VLM) for a visual question answering task, "
                           "it appears that the model encountered difficulties in generating an accurate answer for the question: '" + question + "'. "
-                          "The model has provided an explanation for its inability to respond correctly, which might suggest that certain objects were not detected "
-                          "or recognized in the image. Your task is to analyze the model's explanation carefully to identify and list the specific objects "
-                          "that are missing or were not detected by the VLM. This information is crucial as it will guide the deployment of an additional "
-                          "object detection model specifically to locate these missing objects in the image. "
+                          "The model has provided an explanation for its inability to respond correctly, which might suggest that certain key objects the question asks were "
+                          "not detected in the image. Your task is to analyze the model's explanation carefully to identify and list those objects, "
+                          "while ignoring other objects irrelevant to the question even if they are mentioned in the explanation. "
+                          "This information is crucial as it will guide the deployment of an additional "
+                          "object detection model specifically to locate these missing objects the question cares about in the image. "
                           "Here is the explanation from the VLM regarding its failure to answer the question correctly: '" + previous_response + "' "
-                          "Please extract the names of the objects that need to be detected to better answer the question '" + question + "',"
-                          "but ignore objects mentioned in the explanation that are irrelevant to the question. "
                           "If you find no objects from the explanation, you can instead extract the objects mentioned in the question. "
                           "List the objects in the following format in a single line: 'Object1 . Object2 . Object3 .'"},
         ]
