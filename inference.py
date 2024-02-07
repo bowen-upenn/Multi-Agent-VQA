@@ -2,6 +2,7 @@ from tqdm import tqdm
 import os
 from PIL import Image
 import numpy as np
+import re
 
 import sys
 sys.path.append('./Grounded-Segment-Anything')
@@ -31,11 +32,18 @@ def inference(device, args, test_loader):
             image_id, image_path, question, answer = data['image_id'], data['image_path'], data['question'], data['answer']
             assert len(image_path) == 1
 
-            # extract related object instances from the task prompt
             print('question', question)
             image = np.asarray(Image.open(image_path[0]).convert("RGB"))
-            answers = VLM.query_vlm(image, question[0], step='ask_directly')
+            answer = VLM.query_vlm(image, question[0], step='ask_directly')[0]
 
+            # find if the answer failed or not
+            pattern = r'\[Answer Failed\]'
+            match = re.search(pattern, answer)
+            if match:
+                # extract object instances needed to solve the question
+                related_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects')
+
+            # extract related object instances from the task prompt
             # related_objects = LLM.query_llm(question, llm_model=args['llm']['llm_model'], step='related_objects')
             # print('related_objects', related_objects)
             #

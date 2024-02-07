@@ -16,7 +16,7 @@ class QueryLLM:
             self.args = args
 
 
-    def messages_to_extract_objects_of_interest(self, prompt):
+    def messages_to_extract_related_objects(self, question):
         messages = [
             {"role": "system", "content": "Please extract object mentioned in the following sentence. "
                                         "For this task, focus solely on tangible objects that can be visually identified in an image, "
@@ -24,18 +24,35 @@ class QueryLLM:
                                         "Separate each object with '.' if there are more than one objects. "
                                         "For example, in the sentence '[Question] Is there a red apple on the table?' you should extract 'Red apple. Table.' "
                                         "and in the sentence '[Question] Are these animals of the same species?' you should extract 'Animals' "},
-            {"role": "user", "content": '[Question] ' + prompt}
+            {"role": "user", "content": '[Question] ' + question}
         ]
         return messages
 
 
-    def query_llm(self, prompts, llm_model='gpt-3.5-turbo', step='related_objects', max_batch_size=4):
+    def messages_to_extract_needed_objects(self, question, previous_response):
+        messages = [
+            {"role": "system", "content": "Based on the response provided by a large vision-language model (VLM) for a visual question answering task, "
+                          "it appears that the model encountered difficulties in generating an accurate answer for the question: '" + question + "'. "
+                          "The model has provided an explanation for its inability to respond correctly, which might suggest that certain objects were not detected "
+                          "or recognized in the image. Your task is to analyze the model's explanation carefully to identify and list the specific objects "
+                          "that are missing or were not detected by the VLM. This information is crucial as it will guide the deployment of an additional "
+                          "object detection model specifically to locate these missing objects in the image. "
+                          "Here is the explanation from the VLM regarding its failure to answer the question correctly: '" + previous_response + "' "
+                          "Please extract the names of the objects that need to be detected to better answer the question '" + question + "',"
+                          "but ignore objects mentioned in the explanation that are irrelevant to the question. "
+                          "If you find no objects from the explanation, you can instead extract the objects mentioned in the question. "
+                          "List the objects in the following format in a single line: 'Object1 . Object2 . Object3 .'"},
+        ]
+        return messages
+
+
+    def query_llm(self, prompts, previous_response=None, llm_model='gpt-3.5-turbo', step='related_objects', max_batch_size=4):
         # query on a single image
         if len(prompts) == 1:
             if llm_model == 'gpt-4':
-                response = self._query_openai_gpt_4(prompts[0], step)
+                response = self._query_openai_gpt_4(prompts[0], step, previous_response=previous_response)
             else:
-                response = self._query_openai_gpt_3p5(prompts[0], step)
+                response = self._query_openai_gpt_3p5(prompts[0], step, previous_response=previous_response)
             return response
 
         # query on a batch of images in parallel
@@ -49,19 +66,21 @@ class QueryLLM:
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_batch_size) as executor:
                 if llm_model == 'gpt-4':
-                    batch_responses = list(executor.map(lambda prompt: self._query_openai_gpt_4(prompt, step), batch_prompts))
+                    batch_responses = list(executor.map(lambda prompt: self._query_openai_gpt_4(prompt, step, previous_response=previous_response), batch_prompts))
                 else:
-                    batch_responses = list(executor.map(lambda prompt: self._query_openai_gpt_3p5(prompt, step), batch_prompts))
+                    batch_responses = list(executor.map(lambda prompt: self._query_openai_gpt_3p5(prompt, step, previous_response=previous_response), batch_prompts))
             responses.extend(batch_responses)
 
         return responses
 
 
-    def _query_openai_gpt_3p5(self, prompt, step, verbose=False):
+    def _query_openai_gpt_3p5(self, prompt, step, previous_response=None, verbose=True):
         client = OpenAI(api_key=self.api_key)
 
         if step == 'related_objects':
-            messages = self.messages_to_extract_objects_of_interest(prompt)
+            messages = self.messages_to_extract_related_objects(prompt)
+        elif step == 'needed_objects':
+            messages = self.messages_to_extract_needed_objects(prompt, previous_response)
         else:
             raise ValueError(f'Invalid step: {step}')
 
