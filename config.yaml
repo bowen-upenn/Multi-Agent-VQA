@@ -16,8 +16,8 @@ sam:
 dino:
   GROUNDING_DINO_CONFIG_PATH: "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
   GROUNDING_DINO_CHECKPOINT_PATH: "Grounded-Segment-Anything/groundingdino_swint_ogc.pth"
-  BOX_THRESHOLD: 0.35
-  TEXT_THRESHOLD: 0.25
+  BOX_THRESHOLD: 0.4
+  TEXT_THRESHOLD: 0.3
 llm:
   llm_model: 'gpt-3.5-turbo'
 inference:

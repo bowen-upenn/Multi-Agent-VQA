@@ -8,6 +8,7 @@ import cv2
 import base64
 import requests
 import concurrent.futures
+from torchvision.ops import box_convert
 
 
 class QueryVLM:
@@ -19,35 +20,17 @@ class QueryVLM:
             self.api_key = api_key_file.read()
 
 
-    def get_image(self, image_path, bbox=None): # bbox = [X, Y, W, H]
-        if image_path not in self.image_cache:
-            image = cv2.imread(image_path)
-            image = cv2.resize(image, dsize=(self.image_size, self.image_size))
-
-            # Convert image to bytes for base64 encoding
-            _, buffer = cv2.imencode('.jpg', image)
-            image_bytes = np.array(buffer).tobytes()
-            self.image_cache[image_path] = base64.b64encode(image_bytes).decode('utf-8')
-        else:
-            image_bytes = self.image_cache[image_path]
-
-        if bbox is not None:
-            x, y, w, h = bbox[0], bbox[1], bbox[2], bbox[3]
-            image_bytes = image_bytes[y:y+h, x:x+w]
-
-        return image_bytes
-
-
     def process_image(self, image, bbox=None):
         # we have to crop the image before converting it to base64
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if bbox is not None:
-            print('bbox', bbox)
-            x, y, w, h = int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3])
-            cv2.imwrite('original_image' + str(bbox) + '.jpg', image)
-            image = image[y:y+h, x:x+w]
-            cv2.imwrite('cropped_image' + str(bbox) + '.jpg', image)
+            print("bbox: ", bbox)
+            xyxy = box_convert(boxes=bbox, in_fmt="cxcywh", out_fmt="xyxy")
+            x1, y1, x2, y2 = int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
+            cv2.imwrite('test_images/original_image' + str(bbox) + '.jpg', image)
+            image = image[y1:y2, x1:x2]
+            cv2.imwrite('test_images/cropped_image' + str(bbox) + '.jpg', image)
 
         _, buffer = cv2.imencode('.jpg', image)
         image_bytes = np.array(buffer).tobytes()
