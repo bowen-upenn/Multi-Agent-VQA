@@ -50,6 +50,15 @@ class QueryVLM:
         return image_bytes
 
 
+    def messages_to_answer_directly(self, question):
+        message = "You are performing a Visual Question Answering task." \
+                  "Given the image and the question '" + question + "', please answer the question step by step. " \
+                  "Always begin your final answer with the notation '[Answer]'. " \
+                  "If you can't answer the question directly, please explain why and what you need to solve the question," \
+                  "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'."
+        return message
+
+
     def messages_to_query_object_attributes(self, question, phrase=None):
         # We expect each object to offer a different perspective to solve the question
         message = "Describe the attributes and the name of the object in the image in one sentence, " \
@@ -77,15 +86,15 @@ class QueryVLM:
                    "Always begin each relation with the notation '[Relation]' and specify which two objects you are currently looking at by saying " \
                    "[Object i] and [Object j], where 'i' and 'j' are object indices mentioned above. "
 
-        message += "Finally, given all the information above and the associated image, please answer the question " + question + " step by step, " \
-                   "and always begin your answer with the notation '[Answer]'. "
+        message += "Finally, given all the information above and the associated image as a whole scene, " \
+                   "please answer the question " + question + " step by step, and always begin your answer with the notation '[Answer]'. "
 
         return message
 
     def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, bboxes=None): # "Describe the attributes and the name of the object in the image"
         responses = []
 
-        if step == 'relations' or bboxes is None or len(bboxes) == 0:
+        if step == 'relations' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
             response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions)
             return [response]
 
@@ -116,9 +125,12 @@ class QueryVLM:
             else:
                 messages = self.messages_to_query_object_attributes(question, phrase)
             max_tokens = 200
-        else:
+        elif step == 'relations':
             messages = self.messages_to_query_relations(question, obj_descriptions)
             max_tokens = 400
+        else:
+            messages = self.messages_to_answer_directly(question)
+            max_tokens = 300
 
         # Form the prompt including the image.
         # Due to the strong performance of the vision model, we omit multiple queries and majority vote to reduce costs
