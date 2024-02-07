@@ -10,9 +10,10 @@ import cv2
 
 
 class QueryLLM:
-    def __init__(self):
+    def __init__(self, args):
         with open("openai_key.txt", "r") as api_key_file:
             self.api_key = api_key_file.read()
+            self.args = args
 
 
     def messages_to_extract_objects_of_interest(self, prompt):

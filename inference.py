@@ -21,7 +21,7 @@ def inference(device, args, test_loader):
                                                    min_mask_region_area=args['sam']['min_mask_region_area'],
                                                    pred_iou_thresh=args['sam']['pred_iou_thresh'],
                                                    stability_score_thresh=args['sam']['stability_score_thresh'])
-    LLM, VLM = QueryLLM(), QueryVLM()
+    LLM, VLM = QueryLLM(args), QueryVLM(args)
 
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
