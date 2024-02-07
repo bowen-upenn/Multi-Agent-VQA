@@ -29,6 +29,8 @@ class QueryVLM:
             xyxy = box_convert(boxes=bbox, in_fmt="cxcywh", out_fmt="xyxy")
             x1, y1, x2, y2 = int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
             cv2.imwrite('test_images/original_image' + str(bbox) + '.jpg', image)
+
+            # increase the receptive field of each box to include possible nearby objects and contexts
             image = image[y1:y2, x1:x2]
             cv2.imwrite('test_images/cropped_image' + str(bbox) + '.jpg', image)
 
@@ -39,16 +41,28 @@ class QueryVLM:
         return image_bytes
 
 
-    def messages_to_query_object_attributes(self):
-        return "Describe the attributes and the name of the object in the image, including its visual attributes like color, shape, size, and materials," \
-               "and semantic attributes like type and current status if applicable."
+    def messages_to_query_object_attributes(self, phrase=None):
+        if phrase is not None:
+            return "Describe the attributes and the name of the object in the image in one or two sentences, " \
+                   "with the focus on the " + phrase + " and nearby objects, " \
+                   "including visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
+                   "and semantic attributes like type and current status if applicable."
+        else:
+            return "Describe the attributes and the name of the objects in the image in one or two sentences, " \
+                   "including visual attributes like color, shape, size, and materials, and clothes if the object is a person, " \
+                   "and semantic attributes like type and current status if applicable."
 
 
-    def query_vlm(self, image, step='attributes', bboxes=None): # "Describe the attributes and the name of the object in the image"
+    def query_vlm(self, image, phrases=None, step='attributes', bboxes=None): # "Describe the attributes and the name of the object in the image"
+        if len(bboxes) == 0 or bboxes is None:
+            response = self._query_openai_gpt_4v(image, step)
+            return response
+
         # query on a single image
-        if len(bboxes) == 1 or bboxes is None:
+        if len(bboxes) == 1:
             bbox = bboxes.squeeze(0)
-            response = self._query_openai_gpt_4v(image, step, bbox)
+            phrase = phrases[0]
+            response = self._query_openai_gpt_4v(image, step, phrase, bbox)
             return response
 
         # query on a batch of images in parallel
@@ -57,18 +71,21 @@ class QueryVLM:
 
         # process all objects from the same image in a parallel batch
         with concurrent.futures.ThreadPoolExecutor(max_workers=total_num_objects) as executor:
-            batch_responses = list(executor.map(lambda bbox: self._query_openai_gpt_4v(image, step, bbox), bboxes))
+            batch_responses = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, step, phrase, bbox), bboxes, phrases))
         responses.append(batch_responses)
 
         return responses
 
 
-    def _query_openai_gpt_4v(self, image, step, bbox=None, verbose=True):
+    def _query_openai_gpt_4v(self, image, step, phrase=None, bbox=None, verbose=True):
         # we have to crop the image before converting it to base64
         base64_image = self.process_image(image, bbox)
 
         if step == 'attributes':
-            messages = self.messages_to_query_object_attributes()
+            if phrase is None or bbox is None:
+                messages = self.messages_to_query_object_attributes()
+            else:
+                messages = self.messages_to_query_object_attributes(phrase)
             max_tokens = 200
 
         # Form the prompt including the image.

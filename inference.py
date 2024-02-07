@@ -49,7 +49,7 @@ def inference(device, args, test_loader):
                 print('nearby_boxes', nearby_boxes.shape)
 
             # query a large vision-language agent on the attributes of each object instance
-            object_attributes = VLM.query_vlm(image, step='attributes', bboxes=boxes)
+            object_attributes = VLM.query_vlm(image, phrases, step='attributes', bboxes=boxes)
 
             # merge attributes and class labels of all objects as a system prompt
 
