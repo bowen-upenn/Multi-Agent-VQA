@@ -27,18 +27,17 @@ class QueryVLM:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if bbox is not None:
-            # print("bbox: ", bbox)
             width, height = bbox[2], bbox[3]
             xyxy = box_convert(boxes=bbox, in_fmt="cxcywh", out_fmt="xyxy")
             x1, y1, x2, y2 = int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
 
             # increase the receptive field of each box to include possible nearby objects and contexts
             if width < self.min_bbox_size:
-                x1 = max(0, x1 - (self.min_bbox_size - width) / 2)
-                x2 = min(image.shape[1], x2 + (self.min_bbox_size - width) / 2)
+                x1 = int(max(0, x1 - (self.min_bbox_size - width) / 2))
+                x2 = int(min(image.shape[1], x2 + (self.min_bbox_size - width) / 2))
             if height < self.min_bbox_size:
-                y1 = max(0, y1 - (self.min_bbox_size - height) / 2)
-                y2 = min(image.shape[0], y2 + (self.min_bbox_size - height) / 2)
+                y1 = int(max(0, y1 - (self.min_bbox_size - height) / 2))
+                y2 = int(min(image.shape[0], y2 + (self.min_bbox_size - height) / 2))
 
             # cv2.imwrite('test_images/original_image' + str(bbox) + '.jpg', image)
             image = image[y1:y2, x1:x2]
@@ -51,55 +50,79 @@ class QueryVLM:
         return image_bytes
 
 
-    def messages_to_query_object_attributes(self, phrase=None):
+    def messages_to_query_object_attributes(self, question, phrase=None):
+        # We expect each object to offer a different perspective to solve the question
+        message = "Describe the attributes and the name of the object in the image in one sentence, " \
+                  "including visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
+                  "and semantic attributes like type and current status if applicable, " \
+                  "but only describe those related to solving the question '" + question + "'."
+
         if phrase is not None:
-            return "Describe the attributes and the name of the object in the image in one or two sentences, " \
-                   "with the focus on the " + phrase + " and nearby objects, " \
-                   "including visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
-                   "and semantic attributes like type and current status if applicable."
-        else:
-            return "Describe the attributes and the name of the objects in the image in one or two sentences, " \
-                   "including visual attributes like color, shape, size, and materials, and clothes if the object is a person, " \
-                   "and semantic attributes like type and current status if applicable."
+            message += "You need to focus on the " + phrase + " and nearby objects. "
+
+        return message
 
 
-    def query_vlm(self, image, phrases=None, step='attributes', bboxes=None): # "Describe the attributes and the name of the object in the image"
-        if len(bboxes) == 0 or bboxes is None:
-            response = self._query_openai_gpt_4v(image, step)
-            return response
+    def messages_to_query_relations(self, question, obj_descriptions):
+        message = "This is an image that contains the following objects with their descriptions, separated by the semi-colon ';': "
 
-        # query on a single image
+        if isinstance(obj_descriptions[0], list):
+            obj_descriptions = [obj for obj in obj_descriptions[0]]
+        for i, obj in enumerate(obj_descriptions):
+            message += "[Object " + str(i) + "] " + obj + "; "
+
+        message += "Please describe the relations between these objects in the image to build a local scene graph, " \
+                   "with a focus on those relations related to solving the question " + question + ". " \
+                   "You can describe the spatial, semantic, possessive relations, the interactions, and the causal relations between objects in one sentence. " \
+                   "Always begin each relation with the notation '[Relation]' and specify which two objects you are currently looking at by saying " \
+                   "[Object i] and [Object j], where 'i' and 'j' are object indices mentioned above. "
+
+        message += "Finally, given all the information above and the associated image, please answer the question " + question + " step by step, " \
+                   "and always begin your answer with the notation '[Answer]'. "
+
+        return message
+
+    def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, bboxes=None): # "Describe the attributes and the name of the object in the image"
+        responses = []
+
+        if step == 'relations' or bboxes is None or len(bboxes) == 0:
+            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions)
+            return [response]
+
+        # query on a single object
         if len(bboxes) == 1:
             bbox = bboxes.squeeze(0)
             phrase = phrases[0]
-            response = self._query_openai_gpt_4v(image, step, phrase, bbox)
-            return response
+            response = self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox)
+            responses.append(response)
 
-        # query on a batch of images in parallel
-        responses = []
-        total_num_objects = len(bboxes)
-
-        # process all objects from the same image in a parallel batch
-        with concurrent.futures.ThreadPoolExecutor(max_workers=total_num_objects) as executor:
-            batch_responses = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, step, phrase, bbox), bboxes, phrases))
-        responses.append(batch_responses)
+        else:
+            # process all objects from the same image in a parallel batch
+            total_num_objects = len(bboxes)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=total_num_objects) as executor:
+                response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox), bboxes, phrases))
+                responses.append(response)
 
         return responses
 
 
-    def _query_openai_gpt_4v(self, image, step, phrase=None, bbox=None, verbose=True):
+    def _query_openai_gpt_4v(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, verbose=True):
         # we have to crop the image before converting it to base64
         base64_image = self.process_image(image, bbox)
 
         if step == 'attributes':
             if phrase is None or bbox is None:
-                messages = self.messages_to_query_object_attributes()
+                messages = self.messages_to_query_object_attributes(question)
             else:
-                messages = self.messages_to_query_object_attributes(phrase)
+                messages = self.messages_to_query_object_attributes(question, phrase)
             max_tokens = 200
+        else:
+            messages = self.messages_to_query_relations(question, obj_descriptions)
+            max_tokens = 400
 
         # Form the prompt including the image.
         # Due to the strong performance of the vision model, we omit multiple queries and majority vote to reduce costs
+        # print('Prompt: ', messages)
         prompt = {
             "model": "gpt-4-vision-preview",
             "messages": [

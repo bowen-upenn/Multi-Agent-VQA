@@ -27,6 +27,7 @@ def inference(device, args, test_loader):
         for batch_count, data in enumerate(tqdm(test_loader), 0):
             print('data', data)
             image_id, image_path, question, answer = data['image_id'], data['image_path'], data['question'], data['answer']
+            assert len(image_path) == 1
 
             # extract related object instances from the task prompt
             print('question', question)
@@ -39,19 +40,20 @@ def inference(device, args, test_loader):
             image, boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino, image_path[0], text_prompt=related_objects)
             print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases, 'image', image.shape)
 
-            if args['inference']['find_nearby_objects']:
-                # find all object instances in the scene
-                masks = query_sam(device, args, sam_mask_generator, image)
-                nearby_boxes = torch.tensor([mask['bbox'] for mask in masks])
-                print('masks', len(masks), masks[0].keys(), masks[0]['bbox'], 'nearby_boxes', nearby_boxes.shape)
-
-                nearby_boxes = filter_boxes_pytorch(boxes, nearby_boxes, args['inference']['nearby_bbox_iou_threshold'])
-                print('nearby_boxes', nearby_boxes.shape)
+            # if args['inference']['find_nearby_objects']:
+            #     # find all object instances in the scene
+            #     masks = query_sam(device, args, sam_mask_generator, image)
+            #     nearby_boxes = torch.tensor([mask['bbox'] for mask in masks])
+            #     print('masks', len(masks), masks[0].keys(), masks[0]['bbox'], 'nearby_boxes', nearby_boxes.shape)
+            #
+            #     nearby_boxes = filter_boxes_pytorch(boxes, nearby_boxes, args['inference']['nearby_bbox_iou_threshold'])
+            #     print('nearby_boxes', nearby_boxes.shape)
 
             # query a large vision-language agent on the attributes of each object instance
-            object_attributes = VLM.query_vlm(image, phrases, step='attributes', bboxes=boxes)
+            object_attributes = VLM.query_vlm(image, question[0], step='attributes', phrases=phrases, bboxes=boxes)
 
-            # merge attributes and class labels of all objects as a system prompt
+            # merge object descriptions as a system prompt
+            object_attributes = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes)
 
 
             # query another a large vision-language agent on relation predictions and complete downstream tasks
