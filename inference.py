@@ -28,18 +28,16 @@ def inference(device, args, test_loader):
 
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
-            image_id, image_path, question, answer = data['image_id'], data['image_path'], data['question'], data['answer']
+            image_id, image_path, question, target_answer = data['image_id'], data['image_path'], data['question'], data['answer']
             assert len(image_path) == 1
 
-            print('question', question)
             image = np.asarray(Image.open(image_path[0]).convert("RGB"))
             answer = VLM.query_vlm(image, question[0], step='ask_directly')[0]
 
-            # find if the answer failed or not
-            pattern = r'\[Answer Failed\]'
-            match = re.search(pattern, answer)
+            # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
+            match = re.search(r'\[Answer Failed\]', answer) or re.search(r'sorry', answer.lower())
             if match:
-                # extract object instances needed to solve the question
+                # extract object instances needed to solve the visual question answering task
                 needed_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects')
 
                 # query grounded sam on the input image
@@ -51,8 +49,13 @@ def inference(device, args, test_loader):
                 # query a large vision-language agent on the attributes of each object instance
                 object_attributes = VLM.query_vlm(image, question[0], step='attributes', phrases=phrases, bboxes=boxes)
 
-                # merge object descriptions as a system prompt
-                reattempt_answer = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes, prev_answer=answer)
+                # merge object descriptions as a system prompt and reattempt the visual question answering
+                reattempt_answer = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes[0], prev_answer=answer)
+
+                # grade the answer
+                grade = LLM.query_llm(question, target_answer=target_answer[0], model_answer=reattempt_answer[0], step='grade_answer')
+            else:
+                grade = LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer, step='grade_answer')
 
 
             # extract related object instances from the task prompt

@@ -77,12 +77,13 @@ class QueryVLM:
                   "highlighting the need for more detailed object detection and analysis. Here is the feedback from that attempt [Previous Failed Answer: " + prev_answer + "] " \
                   "To address this, we've identified additional objects within the image. Their descriptions are as follows: "
 
-        if isinstance(obj_descriptions[0], list):
-            obj_descriptions = [obj for obj in obj_descriptions[0]]
-            for i, obj in enumerate(obj_descriptions):
-                message += "[Object " + str(i) + "] " + obj + "; "
+        # if isinstance(obj_descriptions[0], list):
+        #     obj_descriptions = [obj for obj in obj_descriptions[0]]
+        for i, obj in enumerate(obj_descriptions):
+            message += "[Object " + str(i) + "] " + obj + "; "
 
-        message += "Based on these descriptions and the image, please outline each key relation between objects that are crucial for answering '" + question + "' in one sentence and ignore the others. " \
+        message += "Based on these descriptions and the image, list what relations between objects that the visual question '" + question + "' is looking for" \
+                   "and verify if these relations appear in the image, or relations that are crucial for answering the question and ignore the others,"  \
                    "You are encouraged to describe spatial, semantic, possessive relations, interactions, and causal relations between objects to build a local scene graph. " \
                    "For clarity and structure, begin each description of relation with '[Relation]' and indicate the specific objects involved by saying '[Object i] and [Object j]', " \
                    "where 'i' and 'j' refer to the object indices provided above. If the question asks about a relation, verify whether it is true in the image. " \
