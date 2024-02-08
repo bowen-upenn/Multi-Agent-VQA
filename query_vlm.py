@@ -63,8 +63,8 @@ class QueryVLM:
         # We expect each object to offer a different perspective to solve the question
         message = "Describe the attributes and the name of the object in the image in one sentence, " \
                   "including visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
-                  "and semantic attributes like type and current status if applicable, " \
-                  "but only describe those related to solving the question '" + question + "'."
+                  "and semantic attributes like type and current status if applicable. " \
+                  "Think about what objects you should look at to answer the question '" + question + "' in this specific image, and only focus on these objects." \
 
         if phrase is not None:
             message += "You need to focus on the " + phrase + " and nearby objects. "
