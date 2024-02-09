@@ -108,11 +108,11 @@ class QueryVLM:
 
         return message
 
-    def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, prev_answer=None, bboxes=None): # "Describe the attributes and the name of the object in the image"
+    def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, prev_answer=None, bboxes=None, verbose=False):
         responses = []
 
         if step == 'relations' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
-            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer)
+            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer, verbose=False)
             return [response]
 
         # query on a single object
@@ -126,13 +126,13 @@ class QueryVLM:
             # process all objects from the same image in a parallel batch
             total_num_objects = len(bboxes)
             with concurrent.futures.ThreadPoolExecutor(max_workers=total_num_objects) as executor:
-                response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox), bboxes, phrases))
+                response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox, verbose=False), bboxes, phrases))
                 responses.append(response)
 
         return responses
 
 
-    def _query_openai_gpt_4v(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verbose=True):
+    def _query_openai_gpt_4v(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verbose=False):
         # we have to crop the image before converting it to base64
         base64_image = self.process_image(image, bbox)
 

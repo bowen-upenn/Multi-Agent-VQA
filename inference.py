@@ -19,12 +19,13 @@ from query_llm import QueryLLM
 def inference(device, args, test_loader):
     # Building GroundingDINO inference model
     grounding_dino = load_model(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
-    sam = sam_model_registry[args['sam']['SAM_ENCODER_VERSION']](checkpoint=args['sam']['SAM_CHECKPOINT_PATH']).to(device)
-    sam_mask_generator = SamAutomaticMaskGenerator(sam,
-                                                   min_mask_region_area=args['sam']['min_mask_region_area'],
-                                                   pred_iou_thresh=args['sam']['pred_iou_thresh'],
-                                                   stability_score_thresh=args['sam']['stability_score_thresh'])
+    # sam = sam_model_registry[args['sam']['SAM_ENCODER_VERSION']](checkpoint=args['sam']['SAM_CHECKPOINT_PATH']).to(device)
+    # sam_mask_generator = SamAutomaticMaskGenerator(sam,
+    #                                                min_mask_region_area=args['sam']['min_mask_region_area'],
+    #                                                pred_iou_thresh=args['sam']['pred_iou_thresh'],
+    #                                                stability_score_thresh=args['sam']['stability_score_thresh'])
     LLM, VLM = QueryLLM(args), QueryVLM(args)
+    grader = Grader()
 
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
@@ -35,27 +36,49 @@ def inference(device, args, test_loader):
             answer = VLM.query_vlm(image, question[0], step='ask_directly')[0]
 
             # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
-            match = re.search(r'\[Answer Failed\]', answer) or re.search(r'sorry', answer.lower())
-            if match:
+            match_baseline_failed = re.search(r'\[Answer Failed\]', answer) or re.search(r'sorry', answer.lower())
+            if match_baseline_failed:
                 # extract object instances needed to solve the visual question answering task
-                needed_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects')
+                needed_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects', verbose=args['inference']['verbose'])
 
                 # query grounded sam on the input image
                 # the 'boxes' is a tensor of shape (N, 4) where N is the number of object instances in the image,
                 # the 'logits' is a tensor of shape (N), and the 'phrases' is a list of length (N) such as ['table', 'door']
                 image, boxes, logits, phrases = query_grounding_dino(device, args, grounding_dino, image_path[0], text_prompt=needed_objects)
-                print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases, 'image', image.shape)
+                # print('boxes', boxes.shape, 'logits', logits.shape, 'phrases', phrases, 'image', image.shape)
 
                 # query a large vision-language agent on the attributes of each object instance
-                object_attributes = VLM.query_vlm(image, question[0], step='attributes', phrases=phrases, bboxes=boxes)
+                object_attributes = VLM.query_vlm(image, question[0], step='attributes', phrases=phrases, bboxes=boxes, verbose=args['inference']['verbose'])
 
                 # merge object descriptions as a system prompt and reattempt the visual question answering
-                reattempt_answer = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes[0], prev_answer=answer)
+                reattempt_answer = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes[0], prev_answer=answer, verbose=args['inference']['verbose'])
 
                 # grade the answer
-                grade = LLM.query_llm(question, target_answer=target_answer[0], model_answer=reattempt_answer[0], step='grade_answer')
+                grade = LLM.query_llm(question, target_answer=target_answer[0], model_answer=reattempt_answer[0], step='grade_answer', verbose=args['inference']['verbose'])
             else:
-                grade = LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer, step='grade_answer')
+                grade = LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer, step='grade_answer', verbose=args['inference']['verbose'])
+
+            # accumulate the grades
+            match_correct = re.search(r'\[Correct\]', grade)
+            grader.count_total += 1
+
+            if not match_baseline_failed:   # if the baseline does not fail
+                if match_correct:
+                    grader.count_correct_baseline += 1
+                    grader.count_correct += 1   # no need to reattempt the answer
+                else:
+                    grader.count_incorrect_baseline += 1
+                    grader.count_incorrect += 1  # still didn't reattempt the answer in this case
+            else:   # if the baseline fails, reattempt the answer
+                grader.count_incorrect_baseline += 1
+                if match_correct:
+                    grader.count_correct += 1
+                else:
+                    grader.count_incorrect += 1
+
+        accuracy = grader.average_score()
+        print('Accuracy (baseline, final)', accuracy)
+
 
 
             # extract related object instances from the task prompt

@@ -30,6 +30,7 @@ class GQADataset(Dataset):
         image_path = os.path.join(self.images_dir, f"{annot['imageId']}.jpg")
         question = annot['question']
         answer = annot['answer']
-        print('image_path:', image_path, 'question:', question, 'answer:', answer)
+        if self.args['inference']['verbose']:
+            print('image_path:', image_path, 'question:', question, 'answer:', answer)
 
         return {'image_id': image_id, 'image_path': image_path, 'question': question, 'answer': answer}

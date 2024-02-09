@@ -35,12 +35,14 @@ class QueryLLM:
                           "it appears that the model encountered difficulties in generating an accurate answer for the question: '" + question + "'. "
                           "The model has provided an explanation for its inability to respond correctly, which might suggest that certain objects "
                           "important to answer the question were not detected in the image. "
-                          "Your task is to analyze the model's explanation carefully to identify and list those objects, "
-                          "while ignoring other objects irrelevant to the question even if they are mentioned in the explanation. "
-                          "Make sure to include the subject and the object of the question, as they must be critical to answer the question. "
-                          "This information will guide the deployment of an additional object detection model to locate these missing objects. "
+                          "Your task is to analyze the model's explanation carefully to identify those objects or attributes. "
+                          "For questions asking about specific objects (e.g., 'What is the color of the car?'), list the objects 'Car' directly. "
+                          "For questions seeking objects with certain attributes (e.g., 'Which object has a bright color?'), list the attributes with the word 'objects' (e.g., 'bright-colored objects'). "
+                          "Make sure to include the subject and the object of the question, as they must be critical to answer the question, but "
+                          "ignore objects irrelevant to the question even if they are mentioned in the model explanation. "
+                          "This nuanced approach will guide the deployment of an additional object detection model to locate these missing objects or attributes. "
                           "Here is the explanation from the VLM regarding its failure to answer the question correctly: '" + previous_response + "' "
-                          "If you find no objects from the explanation, you can instead extract the objects mentioned in the question. "
+                          "If you find no objects from the explanation, you can instead extract the objects mentioned in the visual question. "
                           "List the objects in the following format in a single line: 'Object1 . Object2 . Object3 .'"},
         ]
         return messages
@@ -63,13 +65,13 @@ class QueryLLM:
         return messages
 
 
-    def query_llm(self, prompts, previous_response=None, target_answer=None, model_answer=None, llm_model='gpt-3.5-turbo', step='related_objects', max_batch_size=4):
+    def query_llm(self, prompts, previous_response=None, target_answer=None, model_answer=None, llm_model='gpt-3.5-turbo', step='related_objects', max_batch_size=4, verbose=False):
         # query on a single image
         if len(prompts) == 1:
             if llm_model == 'gpt-4':
-                response = self._query_openai_gpt_4(prompts[0], step, previous_response=previous_response, target_answer=target_answer, model_answer=model_answer)
+                response = self._query_openai_gpt_4(prompts[0], step, previous_response=previous_response, target_answer=target_answer, model_answer=model_answer, verbose=verbose)
             else:
-                response = self._query_openai_gpt_3p5(prompts[0], step, previous_response=previous_response, target_answer=target_answer, model_answer=model_answer)
+                response = self._query_openai_gpt_3p5(prompts[0], step, previous_response=previous_response, target_answer=target_answer, model_answer=model_answer, verbose=verbose)
             return response
 
         # query on a batch of images in parallel
@@ -84,16 +86,16 @@ class QueryLLM:
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_batch_size) as executor:
                 if llm_model == 'gpt-4':
                     batch_responses = list(executor.map(lambda prompt: self._query_openai_gpt_4(prompt, step, previous_response=previous_response,
-                                                                                                target_answer=target_answer, model_answer=model_answer), batch_prompts))
+                                                                                                target_answer=target_answer, model_answer=model_answer, verbose=verbose), batch_prompts))
                 else:
                     batch_responses = list(executor.map(lambda prompt: self._query_openai_gpt_3p5(prompt, step, previous_response=previous_response,
-                                                                                                  target_answer=target_answer, model_answer=model_answer), batch_prompts))
+                                                                                                  target_answer=target_answer, model_answer=model_answer, verbose=verbose), batch_prompts))
             responses.extend(batch_responses)
 
         return responses
 
 
-    def _query_openai_gpt_3p5(self, prompt, step, previous_response=None, target_answer=None, model_answer=None, verbose=True):
+    def _query_openai_gpt_3p5(self, prompt, step, previous_response=None, target_answer=None, model_answer=None, verbose=False):
         client = OpenAI(api_key=self.api_key)
 
         if step == 'related_objects':

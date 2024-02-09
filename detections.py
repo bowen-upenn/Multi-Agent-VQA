@@ -16,7 +16,7 @@ from groundingdino.util.inference import load_model, load_image, predict, annota
 from utils import *
 
 
-def query_grounding_dino(device, args, model, image_path, text_prompt="bear.", save_image=True):
+def query_grounding_dino(device, args, model, image_path, text_prompt="bear.", save_image=False):
     # # Example code to init the GroundingDINO model
     # model = load_model("GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py", "./groundingdino_swint_ogc.pth")
     # If you want to detect multiple objects in one sentence with Grounding DINO, we suggest separating each name with . . 
@@ -35,7 +35,7 @@ def query_grounding_dino(device, args, model, image_path, text_prompt="bear.", s
 
     if save_image:
         filename = re.search(r'n(\d+)\.jpg', image_path).group(1)
-        print(f"filename: {filename}")
+        print(f"Saving filename: {filename}")
         plot_grounding_dino_bboxes(image_source, boxes, logits, phrases, filename)
 
     h, w, _ = image_source.shape
@@ -63,7 +63,7 @@ def query_sam(device, args, sam_mask_generator, image):
     return masks
 
 
-def query_grounded_sam(rank, args, sam_predictor, image, class_prompt=["The running dog"]):
+def query_grounded_sam(device, args, sam_predictor, image, class_prompt=["The running dog"]):
     # # Example code to init the GroundingSAM model
     # sam = sam_model_registry[args['sam']['SAM_ENCODER_VERSION']](checkpoint=args['sam']['SAM_CHECKPOINT_PATH'])
     # sam.to(rank)

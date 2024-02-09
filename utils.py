@@ -5,6 +5,24 @@ import cv2
 from groundingdino.util.inference import annotate
 
 
+class Grader:
+    def __init__(self):
+        self.count_correct = 0
+        self.count_incorrect = 0
+        self.count_correct_baseline = 0
+        self.count_incorrect_baseline = 0
+        self.count_total = 0
+
+    def average_score(self):
+        """Calculate and return the average score of the grades."""
+        if self.count_total == 0:
+            return 0  # Return 0 if there are no grades to avoid division by zero
+
+        accuracy_baseline = self.count_correct_baseline / self.count_total
+        accuracy = self.count_correct / self.count_total
+        return accuracy_baseline, accuracy
+
+
 def calculate_iou_batch(a, b):
     """
     Vectorized calculation of IoU for pairs of bounding boxes in a and b.
