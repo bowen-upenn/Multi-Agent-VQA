@@ -33,10 +33,10 @@ def inference(device, args, test_loader):
             assert len(image_path) == 1
 
             image = np.asarray(Image.open(image_path[0]).convert("RGB"))
-            answer = VLM.query_vlm(image, question[0], step='ask_directly')[0]
+            answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])[0]
 
             # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
-            match_baseline_failed = re.search(r'\[Answer Failed\]', answer) or re.search(r'sorry', answer.lower())
+            match_baseline_failed = re.search(r'\[Answer Failed\]', answer) or re.search(r'sorry', answer.lower()) or len(answer) == 0
             if match_baseline_failed:
                 # extract object instances needed to solve the visual question answering task
                 needed_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects', verbose=args['inference']['verbose'])
@@ -54,14 +54,29 @@ def inference(device, args, test_loader):
                 reattempt_answer = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes[0], prev_answer=answer, verbose=args['inference']['verbose'])
 
                 # grade the answer
-                grade = LLM.query_llm(question, target_answer=target_answer[0], model_answer=reattempt_answer[0], step='grade_answer', verbose=args['inference']['verbose'])
+                grades = []
+                for grader_id in range(3):
+                    grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=reattempt_answer[0], step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
             else:
-                grade = LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer, step='grade_answer', verbose=args['inference']['verbose'])
+                grades = []
+                for grader_id in range(3):
+                    grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer, step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
 
             # accumulate the grades
-            match_correct = re.search(r'\[Correct\]', grade)
-            grader.count_total += 1
+            count_match_correct = 0
+            for grade in grades:
+                if re.search(r'\[Correct\]', grade):
+                    count_match_correct += 1
+            match_correct = True if count_match_correct >= 2 else False  # majority vote: if at least 2 out of 3 graders agree, the answer is correct
+            if args['inference']['verbose']:
+                if match_correct:
+                    majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
+                    print(f'{Colors.OKBLUE}{majority_vote}{Colors.ENDC}')
+                else:
+                    majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
+                    print(f'{Colors.FAIL}{majority_vote}{Colors.ENDC}')
 
+            grader.count_total += 1
             if not match_baseline_failed:   # if the baseline does not fail
                 if match_correct:
                     grader.count_correct_baseline += 1
@@ -75,6 +90,10 @@ def inference(device, args, test_loader):
                     grader.count_correct += 1
                 else:
                     grader.count_incorrect += 1
+
+            if (batch_count + 1) % args['inference']['print_every'] == 0:
+                accuracy = grader.average_score()
+                print('Accuracy at batch idx ', batch_count, '(baseline, final)', accuracy)
 
         accuracy = grader.average_score()
         print('Accuracy (baseline, final)', accuracy)

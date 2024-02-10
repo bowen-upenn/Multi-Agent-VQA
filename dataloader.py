@@ -4,6 +4,8 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 
+from utils import *
+
 
 class GQADataset(Dataset):
     def __init__(self, args, transform=None):
@@ -31,6 +33,7 @@ class GQADataset(Dataset):
         question = annot['question']
         answer = annot['answer']
         if self.args['inference']['verbose']:
-            print('image_path:', image_path, 'question:', question, 'answer:', answer)
+            curr_data = 'image_path: ' + image_path + ' question: ' + question + ' answer: ' + answer
+            print(f'{Colors.HEADER}{curr_data}{Colors.ENDC}')
 
         return {'image_id': image_id, 'image_path': image_path, 'question': question, 'answer': answer}

@@ -52,9 +52,12 @@ class QueryVLM:
 
     def messages_to_answer_directly(self, question):
         message = "You are performing a Visual Question Answering task." \
-                  "Given the image and the question '" + question + "', please answer the question step by step. " \
-                  "Always begin your final answer with the notation '[Answer]'. " \
-                  "If you can't answer the question directly, please explain why and what you need to solve the question," \
+                  "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
+                  "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
+                  "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image." \
+                  "Begin your final answer with the notation '[Answer]'. " \
+                  "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
+                  "do not make a guess, but please explain why and what you need to solve the question," \
                   "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'."
         return message
 
@@ -82,15 +85,13 @@ class QueryVLM:
         for i, obj in enumerate(obj_descriptions):
             message += "[Object " + str(i) + "] " + obj + "; "
 
-        message += "Based on these descriptions and the image, list what relations between objects that the visual question '" + question + "' is looking for" \
-                   "and verify if these relations appear in the image, or relations that are crucial for answering the question and ignore the others,"  \
-                   "You are encouraged to describe spatial, semantic, possessive relations, interactions, and causal relations between objects to build a local scene graph. " \
-                   "For clarity and structure, begin each description of relation with '[Relation]' and indicate the specific objects involved by saying '[Object i] and [Object j]', " \
-                   "where 'i' and 'j' refer to the object indices provided above. If the question asks about a relation, verify whether it is true in the image. " \
-                   "Finally, using the detailed object descriptions and the newly established scene graph of the image, please re-attempt to answer the visual question '" + question + "' step by step. " \
+        message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
+                   "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
                    "Begin your final answer with '[Reattempted Answer]' or '[Reattempted Answer Failed]' if you are still unable to answer the question."
 
-        # message = "This is an image that contains the following objects with their descriptions, separated by the semi-colon ';': "
+        # "For clarity and structure, begin each description of relation with '[Relation]' and indicate the specific objects involved by saying '[Object i] and [Object j]', " \
+        # "where 'i' and 'j' refer to the object indices provided above. If the question asks about a relation, verify whether it is true in the image. " \
+            # message = "This is an image that contains the following objects with their descriptions, separated by the semi-colon ';': "
         #
         # if isinstance(obj_descriptions[0], list):
         #     obj_descriptions = [obj for obj in obj_descriptions[0]]
@@ -112,21 +113,21 @@ class QueryVLM:
         responses = []
 
         if step == 'relations' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
-            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer, verbose=False)
+            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer, verbose=verbose)
             return [response]
 
         # query on a single object
         if len(bboxes) == 1:
             bbox = bboxes.squeeze(0)
             phrase = phrases[0]
-            response = self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox)
+            response = self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox, verbose=verbose)
             responses.append(response)
 
         else:
             # process all objects from the same image in a parallel batch
             total_num_objects = len(bboxes)
             with concurrent.futures.ThreadPoolExecutor(max_workers=total_num_objects) as executor:
-                response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox, verbose=False), bboxes, phrases))
+                response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox, verbose=verbose), bboxes, phrases))
                 responses.append(response)
 
         return responses
@@ -180,7 +181,7 @@ class QueryVLM:
             completion_text = response_json['choices'][0].get('message', {}).get('content', '')
 
             if verbose:
-                print(f'Response: {completion_text}')
+                print(f'VLM Response: {completion_text}')
 
             return completion_text
         else:

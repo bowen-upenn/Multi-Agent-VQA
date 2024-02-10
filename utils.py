@@ -96,3 +96,11 @@ def plot_grounding_dino_bboxes(image_source, boxes, logits, phrases, filename):
     annotated_frame = annotated_frame[:, :, [2, 1, 0]]  # BGR2RGB
     plt.imsave('test_images/bboxes' + filename + '.jpg', annotated_frame)
 
+
+class Colors:
+    HEADER = '\033[95m'  # Purple
+    OKBLUE = '\033[94m'  # Blue
+    OKGREEN = '\033[92m'  # Green
+    WARNING = '\033[93m'  # Yellow
+    FAIL = '\033[91m'    # Red
+    ENDC = '\033[0m'     # Reset color

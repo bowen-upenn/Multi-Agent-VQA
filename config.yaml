@@ -28,3 +28,4 @@ inference:
   verbose: True
   find_nearby_objects: False
   nearby_bbox_iou_threshold: 0.5
+  print_every: 50
