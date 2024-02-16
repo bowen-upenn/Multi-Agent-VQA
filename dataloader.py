@@ -10,7 +10,15 @@ from utils import *
 class GQADataset(Dataset):
     def __init__(self, args, transform=None):
         self.args = args
-        self.questions_file = self.args['datasets']['gqa_questions_file']
+        self.dataset_split = args['datasets']['gqa_dataset_split']
+
+        if self.dataset_split == 'val':
+            self.questions_file = self.args['datasets']['gqa_val_questions_file']
+        elif self.dataset_split == 'val-subset':
+            self.questions_file = self.args['datasets']['gqa_val_subset_questions_file']
+        else:
+            self.questions_file = self.args['datasets']['gqa_test_questions_file']
+
         self.images_dir = self.args['datasets']['gqa_images_dir']
         self.transform = transform
         with open(self.questions_file, 'r') as f:
@@ -20,10 +28,15 @@ class GQADataset(Dataset):
         return len(self.questions)
 
     def __getitem__(self, idx):
-        annot = self.questions[list(self.questions.keys())[idx]]
+        if self.dataset_split == 'val-subset':
+            annot = self.questions[idx]
+            image_id = annot['image']
+            image_path = os.path.join(self.images_dir, image_id)
+        else:
+            annot = self.questions[list(self.questions.keys())[idx]]
+            image_id = annot['imageId']
+            image_path = os.path.join(self.images_dir, f"{image_id}.jpg")
 
-        image_id = annot['imageId']
-        image_path = os.path.join(self.images_dir, f"{annot['imageId']}.jpg")
         question = annot['question']
         answer = annot['answer']
 
