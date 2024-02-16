@@ -25,11 +25,16 @@ def inference(device, args, test_loader):
             assert len(image_path) == 1
 
             image = np.asarray(Image.open(image_path[0]).convert("RGB"))
-            answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])[0]
 
-            # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
-            match_baseline_failed = re.search(r'\[Answer Failed\]', answer) or re.search(r'sorry', answer.lower()) or len(answer) == 0
-            if match_baseline_failed:
+            match_baseline_failed = False
+            if not args['inference']['force_multi_agents']:
+                # try to answer the visual question using the baseline large VLM model directly without calling multi-agents
+                answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])[0]
+
+                # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
+                match_baseline_failed = re.search(r'\[Answer Failed\]', answer) or re.search(r'sorry', answer.lower()) or len(answer) == 0
+
+            if match_baseline_failed or args['inference']['force_multi_agents']:
                 msg = "The baseline model failed to answer the question. Reattempting with additional information via multi-agents."
                 print(f'{Colors.WARNING}{msg}{Colors.ENDC}')
 

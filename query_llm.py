@@ -58,7 +58,7 @@ class QueryLLM:
                               "Please understand that the correct answer provided by the dataset is artificially too short. Therefore, as long as the correct answer is mentioned in the VLM's answer, "
                               "it should be graded as '[Grader 0] [Correct]'. If the VLM's answer contains the correct answer but has additional information not mentioned by the correct answer, it is still '[Grader 0] [Correct]'. " 
                               "If the question involves multiple conditions and the correct answer is no, grade the VLM's answer as '[Grader 0] [Correct]' as long as it correctly finds that one of the conditions is not met. "
-                              "Partially correct is still '[Grader 0] [Correct]'. Otherwise, if the VLM's answer misses the targeted information, grade the answer as '[Grader 0] [Incorrect]'. Reason your grading step by step. "},
+                              "Partially correct is still '[Grader 0] [Correct]'. Otherwise, if the VLM's answer misses the targeted information, grade the answer as '[Grader 0] [Incorrect]'. Reason your grading step by step but keep it short. "},
                 {"role": "user", "content": "The VLM was asked the question: '" + question + "'. "
                                             "The correct answer for the question is: '" + target_answer + "'. "
                                             "The VLM provided the following answer: '" + model_answer + "'. "},
@@ -70,7 +70,7 @@ class QueryLLM:
                                               "For a question that involves multiple criteria, such as 'Does the image contain a brightly colored and large doll?' and the correct answer is 'No', "
                                               "a response like 'The doll indeed has a bright color but it is not large' that correctly identifies at least one criterion not being met, even if other criteria are met, should be rated as '[Grader 1] [Correct]'. " 
                                               "A '[Grader 1] [Correct]' rating applies to answers that are partially right. If the VLM fails to address the key point of the question, mark it as '[Grader 1] [Incorrect]'. "
-                                              "Provide a rationale for your evaluation, highlighting the reasoning behind your decision. "},
+                                              "Provide a brief rationale for your evaluation, highlighting the reasoning behind your decision. "},
                 {"role": "user", "content": "Question posed to the VLM: '" + question + "'. "
                                             "Dataset's correct answer: '" + target_answer + "'. "
                                             "VLM's response: '" + model_answer + "'. "}
@@ -81,7 +81,7 @@ class QueryLLM:
                                               "Use the dataset's correct answer as the standard. A response should be marked '[Grader 2] [Correct]' if it mentions the correct answer, regardless of additional unrelated details. "
                                               "In cases where the question requires satisfying multiple criteria and the answer is negative, the response is '[Grader 2] [Correct]' if it correctly finds one criteria that is not met. "
                                               "Even partially accurate responses qualify as '[Grader 2] [Correct]'. Mark the response as '[Grader 2] [Incorrect]' only when it overlooks essential details. "
-                                              "Justify your assessment step by step. "},
+                                              "Justify your assessment step by step but keep it brief. "},
                 {"role": "user", "content": "Visual question asked: '" + question + "'. "
                                             "Correct answer according to the dataset: '" + target_answer + "'. "
                                             "Answer provided by the model: '" + model_answer + "'. "}
