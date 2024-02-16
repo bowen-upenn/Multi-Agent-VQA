@@ -4,9 +4,6 @@ from PIL import Image
 import numpy as np
 import re
 
-import sys
-sys.path.append('./Grounded-Segment-Anything')
-
 from detections import query_sam, query_grounded_sam, query_grounding_dino
 from groundingdino.util.inference import load_model
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator

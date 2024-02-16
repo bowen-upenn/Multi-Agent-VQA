@@ -12,6 +12,9 @@ from utils import *
 from inference import inference
 from dataloader import GQADataset#, VisualGenomeDataset, SNLIVEDataset, CLEVRobotDataset, AI2THORDataset
 
+import sys
+sys.path.append('./Grounded-Segment-Anything')
+
 
 if __name__ == "__main__":
     print('Torch', torch.__version__, 'Torchvision', torchvision.__version__)

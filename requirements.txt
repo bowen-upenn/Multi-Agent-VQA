@@ -11,7 +11,6 @@ cffi==1.16.0
 charset-normalizer==3.3.2
 chumpy==0.70
 click==8.1.7
-clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33
 colorama==0.4.6
 coloredlogs==15.0.1
 comm==0.2.1
@@ -33,7 +32,6 @@ flatbuffers==23.5.26
 fonttools==4.47.2
 fsspec==2023.12.2
 ftfy==6.1.3
--e git+ssh://git@github.com/IDEA-Research/Grounded-Segment-Anything.git@fe24c033820adffff66ac0eb191828542e8afe5e#egg=groundingdino&subdirectory=GroundingDINO
 h11==0.14.0
 httpcore==1.0.2
 httpx==0.26.0
@@ -57,7 +55,6 @@ MarkupSafe==2.1.5
 matplotlib==3.7.4
 matplotlib-inline==0.1.6
 mdurl==0.1.2
-mmcv-full==1.7.1
 mmpose==0.28.0
 model-index==0.1.11
 mpmath==1.3.0
@@ -111,13 +108,11 @@ python-dateutil==2.8.2
 pytz==2023.4
 PyYAML==6.0.1
 pyzmq==25.1.2
--e git+https://github.com/xinyu1205/recognize-anything.git@b189bd1606694cf41110ed9be57d2e8674fd911d#egg=ram
 regex==2023.12.25
 requests==2.28.2
 rich==13.4.2
 safetensors==0.4.2
 scipy==1.10.0
--e git+ssh://git@github.com/IDEA-Research/Grounded-Segment-Anything.git@fe24c033820adffff66ac0eb191828542e8afe5e#egg=segment_anything&subdirectory=segment_anything
 six==1.16.0
 sniffio==1.3.0
 stack-data==0.6.3
