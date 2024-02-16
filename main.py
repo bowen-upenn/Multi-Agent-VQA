@@ -25,13 +25,15 @@ if __name__ == "__main__":
     except Exception as e:
         print('Error reading the config file')
 
-    # # Command-line argument parsing
-    # parser = argparse.ArgumentParser(description='Command line arguments')
-    # parser.add_argument('--run_mode', type=str, default=None, help='Override run_mode (train, eval, prepare_cs, train_cs, eval_cs)')
-    # cmd_args = parser.parse_args()
+    # Command-line argument parsing
+    parser = argparse.ArgumentParser(description='Command line arguments')
+    parser.add_argument('--dataset', type=str, default=None, help='Set dataset (gqa, vqa-v2)')
+    parser.add_argument('--verbose', dest='verbose', action='store_true', help='Set verbose to True')
+    cmd_args = parser.parse_args()
 
-    # # Override args from config.yaml with command-line arguments if provided
-    # args['training']['run_mode'] = cmd_args.run_mode if cmd_args.run_mode is not None else args['training']['run_mode']
+    # Override args from config.yaml with command-line arguments if provided
+    args['datasets']['dataset'] = cmd_args.dataset if cmd_args.dataset is not None else args['datasets']['dataset']
+    args['inference']['verbose'] = cmd_args.verbose if cmd_args.verbose is not None else args['inference']['verbose']
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size = torch.cuda.device_count()

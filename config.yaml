@@ -11,7 +11,7 @@ datasets:
   vqa_v2_test_dev_questions_file: '/tmp/datasets/vqa-v2/v2_OpenEnded_mscoco_test-dev2015_questions.json'
   vqa_v2_answer_list: '/tmp/datasets/vqa-v2/answer_list.json'
   percent_test: 0.01
-  num_test_data: 1000
+  num_test_data: 10
   use_num_test_data: True
 sam:
   GROUNDING_DINO_CONFIG_PATH: "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
@@ -36,5 +36,6 @@ vlm:
 inference:
   verbose: False
   find_nearby_objects: False
+  force_multi_agents: False
   nearby_bbox_iou_threshold: 0.5
   print_every: 50

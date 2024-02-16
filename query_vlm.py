@@ -51,14 +51,27 @@ class QueryVLM:
 
 
     def messages_to_answer_directly(self, question):
-        message = "You are performing a Visual Question Answering task." \
-                  "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
-                  "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
-                  "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image." \
-                  "Begin your final answer with the notation '[Answer]'. " \
-                  "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
-                  "do not make a guess, but please explain why and what you need to solve the question," \
-                  "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'."
+        if self.args['datasets']['dataset'] == 'vqa-v2':
+            # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
+            message = "You are performing a Visual Question Answering task." \
+                      "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
+                      "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
+                      "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image. " \
+                      "Begin your final answer with the notation '[Answer]' and keep your answers short. " \
+                      "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
+                      "If you believe your answer falls into the category of 'yes/no' or a number, please state 'yes/no' or provide the number after '[Answer]'. " \
+                      "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
+                      "do not make a guess, but please explain why and what you need to solve the question," \
+                      "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'."
+        else:
+            message = "You are performing a Visual Question Answering task." \
+                      "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
+                      "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
+                      "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image." \
+                      "Begin your final answer with the notation '[Answer]'. " \
+                      "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
+                      "do not make a guess, but please explain why and what you need to solve the question," \
+                      "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'."
         return message
 
 
@@ -85,9 +98,17 @@ class QueryVLM:
         for i, obj in enumerate(obj_descriptions):
             message += "[Object " + str(i) + "] " + obj + "; "
 
-        message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
-                   "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
-                   "Begin your final answer with '[Reattempted Answer]' or '[Reattempted Answer Failed]' if you are still unable to answer the question."
+        if self.args['datasets']['dataset'] == 'vqa-v2':
+            # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
+            message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. " \
+                       "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
+                       "Begin your final answer with '[Reattempted Answer]' and keep your answer short, or '[Reattempted Answer Failed]' if you are still unable to answer the question." \
+                       "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
+                       "If you believe your answer falls into the category of 'yes/no' or a number, please state 'yes/no' or provide the number after '[Answer]'. "
+        else:
+            message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
+                       "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
+                       "Begin your final answer with '[Reattempted Answer]' or '[Reattempted Answer Failed]' if you are still unable to answer the question."
 
         # "For clarity and structure, begin each description of relation with '[Relation]' and indicate the specific objects involved by saying '[Object i] and [Object j]', " \
         # "where 'i' and 'j' refer to the object indices provided above. If the question asks about a relation, verify whether it is true in the image. " \
@@ -142,7 +163,7 @@ class QueryVLM:
                 messages = self.messages_to_query_object_attributes(question)
             else:
                 messages = self.messages_to_query_object_attributes(question, phrase)
-            max_tokens = 200
+            max_tokens = 300
         elif step == 'relations':
             messages = self.messages_to_query_relations(question, obj_descriptions, prev_answer)
             max_tokens = 500

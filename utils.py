@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import json
+import re
 
 from groundingdino.util.inference import annotate
 
@@ -106,6 +107,37 @@ class Colors:
     WARNING = '\033[93m'  # Yellow
     FAIL = '\033[91m'    # Red
     ENDC = '\033[0m'     # Reset color
+
+
+def accumulate_grades(args, grader, grades, match_baseline_failed):
+    # accumulate the grades
+    count_match_correct = 0
+    for grade in grades:
+        if re.search(r'\[Correct\]', grade):
+            count_match_correct += 1
+    match_correct = True if count_match_correct >= 2 else False  # majority vote: if at least 2 out of 3 graders agree, the answer is correct
+    if args['inference']['verbose']:
+        if match_correct:
+            majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
+            print(f'{Colors.OKBLUE}{majority_vote}{Colors.ENDC}')
+        else:
+            majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
+            print(f'{Colors.FAIL}{majority_vote}{Colors.ENDC}')
+
+    grader.count_total += 1
+    if not match_baseline_failed:  # if the baseline does not fail
+        if match_correct:
+            grader.count_correct_baseline += 1
+            grader.count_correct += 1  # no need to reattempt the answer
+        else:
+            grader.count_incorrect_baseline += 1
+            grader.count_incorrect += 1  # still didn't reattempt the answer in this case
+    else:  # if the baseline fails, reattempt the answer
+        grader.count_incorrect_baseline += 1
+        if match_correct:
+            grader.count_correct += 1
+        else:
+            grader.count_incorrect += 1
 
 
 def load_answer_list(answer_list_path):
