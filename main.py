@@ -10,7 +10,7 @@ import argparse
 
 from utils import *
 from inference import inference
-from dataloader import GQADataset#, VisualGenomeDataset, SNLIVEDataset, CLEVRobotDataset, AI2THORDataset
+from dataloader import * #, VisualGenomeDataset, SNLIVEDataset, CLEVRobotDataset, AI2THORDataset
 
 import sys
 sys.path.append('./Grounded-Segment-Anything')
@@ -42,7 +42,12 @@ if __name__ == "__main__":
 
     # Prepare datasets
     print("Loading the datasets...")
-    test_dataset = GQADataset(args)
+    if args['datasets']['dataset'] == 'gqa':
+        test_dataset = GQADataset(args)
+    elif args['datasets']['dataset'] == 'vqa-v2':
+        test_dataset = VQAv2Dataset(args)
+    else:
+        raise ValueError('Invalid dataset name')
 
     torch.manual_seed(0)
     if args['datasets']['use_num_test_data']:

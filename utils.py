@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import json
 
 from groundingdino.util.inference import annotate
 
@@ -105,3 +106,37 @@ class Colors:
     WARNING = '\033[93m'  # Yellow
     FAIL = '\033[91m'    # Red
     ENDC = '\033[0m'     # Reset color
+
+
+def load_answer_list(answer_list_path):
+    # Load the answer list from the JSON file
+    file_path = '/tmp/datasets/vqa/answer_list.json'
+    with open(file_path, 'r') as file:
+        answer_list = json.load(file)
+    return answer_list
+
+
+def filter_response(response, answer_list):
+    """
+    Filters a response from an LLM to only include words that are in the provided answer list.
+
+    Parameters:
+    - response (str): The text response from the LLM.
+    - answer_list (list): A list of strings containing acceptable answers.
+
+    Returns:
+    - str: A filtered response containing only words from the answer_list.
+    """
+    # Tokenize the response into words
+    response_words = response.split()
+
+    # Filter words based on the answer list
+    filtered_words = [word for word in response_words if word in answer_list]
+
+    # Join the filtered words back into a string
+    filtered_response = ' '.join(filtered_words)
+
+    return filtered_response
+
+
+
