@@ -35,8 +35,9 @@ def inference(device, args, test_loader):
                 match_baseline_failed = re.search(r'\[Answer Failed\]', answer) or re.search(r'sorry', answer.lower()) or len(answer) == 0
 
             if match_baseline_failed or args['inference']['force_multi_agents']:
-                msg = "The baseline model failed to answer the question. Reattempting with additional information via multi-agents."
-                print(f'{Colors.WARNING}{msg}{Colors.ENDC}')
+                if args['inference']['verbose']:
+                    msg = "The baseline model failed to answer the question. Reattempting with additional information via multi-agents."
+                    print(f'{Colors.WARNING}{msg}{Colors.ENDC}')
 
                 # extract object instances needed to solve the visual question answering task
                 needed_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects', verbose=args['inference']['verbose'])
