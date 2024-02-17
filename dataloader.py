@@ -68,7 +68,7 @@ class VQAv2Dataset(Dataset):
             self.answers_file = None
 
         elif self.dataset_split == 'test-dev':
-            self.images_dir = self.args['datasets']['vqa_v2_train_images_dir']
+            self.images_dir = self.args['datasets']['vqa_v2_test_images_dir']
             self.questions_file = self.args['datasets']['vqa_v2_test_dev_questions_file']
             self.answers_file = None
 
@@ -92,7 +92,7 @@ class VQAv2Dataset(Dataset):
         if self.answers_file is not None:
             answer = self.answers[idx]['multiple_choice_answer']
         else:
-            answer = None
+            answer = ""
 
         if self.args['inference']['verbose']:
             curr_data = 'image_path: ' + image_path + ' question: ' + question + ' answer: ' + answer

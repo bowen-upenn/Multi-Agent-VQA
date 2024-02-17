@@ -2,3 +2,6 @@
 	path = Grounded-Segment-Anything
 	url = git@github.com:IDEA-Research/Grounded-Segment-Anything.git
 	branch = main
+[submodule "unilm"]
+	path = unilm
+	url = git@github.com:bowen-upenn/unilm.git
