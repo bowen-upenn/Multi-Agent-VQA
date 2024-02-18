@@ -5,3 +5,4 @@
 [submodule "unilm"]
 	path = unilm
 	url = git@github.com:bowen-upenn/unilm.git
+	branch = master
