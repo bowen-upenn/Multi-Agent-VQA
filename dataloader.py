@@ -44,7 +44,7 @@ class GQADataset(Dataset):
             curr_data = 'image_path: ' + image_path + ' question: ' + question + ' answer: ' + answer
             print(f'{Colors.HEADER}{curr_data}{Colors.ENDC}')
 
-        return {'image_id': image_id, 'image_path': image_path, 'question': question, 'answer': answer}
+        return {'image_id': image_id, 'image_path': image_path, 'question': question, 'question_id': -1, 'answer': answer}
 
 
 class VQAv2Dataset(Dataset):
@@ -96,6 +96,7 @@ class VQAv2Dataset(Dataset):
             image_path = os.path.join(self.images_dir, f"COCO_test2015_{image_id:012}.jpg")
 
         question = annot['question']
+        question_id = annot['question_id']
         if self.answers_file is not None:
             answer = self.answers[idx]['multiple_choice_answer']
         else:
@@ -105,4 +106,4 @@ class VQAv2Dataset(Dataset):
             curr_data = 'image_path: ' + image_path + ' question: ' + question + ' answer: ' + answer
             print(f'{Colors.HEADER}{curr_data}{Colors.ENDC}')
 
-        return {'image_id': image_id, 'image_path': image_path, 'question': question, 'answer': answer}
+        return {'image_id': image_id, 'image_path': image_path, 'question': question, 'question_id': question_id, 'answer': answer}

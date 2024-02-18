@@ -140,35 +140,75 @@ def accumulate_grades(args, grader, grades, match_baseline_failed):
             grader.count_incorrect += 1
 
 
-def load_answer_list(answer_list_path):
+def load_answer_list(file_path):
+    """
+    This function contains all the possible words in ground-truth answers in the VQA v2 dataset.
+    """
     # Load the answer list from the JSON file
-    file_path = '/tmp/datasets/vqa/answer_list.json'
     with open(file_path, 'r') as file:
         answer_list = json.load(file)
     return answer_list
 
 
-def filter_response(response, answer_list):
+def save_output_predictions_vqav2(question_id, model_answer, answer_list, split='test'):
     """
-    Filters a response from an LLM to only include words that are in the provided answer list.
-
-    Parameters:
-    - response (str): The text response from the LLM.
-    - answer_list (list): A list of strings containing acceptable answers.
-
-    Returns:
-    - str: A filtered response containing only words from the answer_list.
+    This function formats the model answers to the VQA-v2 required format
+    for close-sourced evaluation on test and test-dev datasets
     """
-    # Tokenize the response into words
-    response_words = response.split()
 
-    # Filter words based on the answer list
-    filtered_words = [word for word in response_words if word in answer_list]
+    def filter_response(response, answer_list):
+        """
+        Filters a response from an LLM to only include words that are in the provided answer list.
 
-    # Join the filtered words back into a string
-    filtered_response = ' '.join(filtered_words)
+        Parameters:
+        - response (str): The text response from the LLM.
+        - answer_list (list): A list of strings containing acceptable answers.
 
-    return filtered_response
+        Returns:
+        - str: A filtered response containing only words from the answer_list.
+        """
+        # Tokenize the response into words
+        response_words = response.split()
+
+        # Filter words based on the answer list
+        filtered_words = [word for word in response_words if word in answer_list]
+
+        # Join the filtered words back into a string
+        filtered_response = ' '.join(filtered_words)
+
+        return filtered_response
 
 
+    # Identify the marker for the start of the response
+    if '[Answer]' in model_answer:
+        start_idx = model_answer.index('[Answer]') + len('[Answer]')
+    elif '[Reattempted Answer]' in model_answer:
+        start_idx = model_answer.index('[Reattempted Answer]') + len('[Reattempted Answer]')
+    else:
+        return None  # No valid answer marker found
 
+    # Extract the response after the identified marker
+    response = model_answer[start_idx:].strip()
+
+    # Filter the extracted response using the answer list
+    filtered_response = filter_response(response, answer_list)
+
+    result = {
+        "question_id": question_id,
+        "answer": filtered_response if filtered_response else model_answer
+    }
+
+    saved_file_name = 'outputs/submit_vqav2_' + split + '.json'
+
+    # Check if the file exists and is not empty
+    if os.path.exists(saved_file_name) and os.path.getsize(saved_file_name) > 0:
+        # Read the existing data
+        with open(saved_file_name, 'r') as f:
+            data = json.load(f)
+            data.append(result)  # Append the new result
+    else:
+        data = [result]  # Start a new list if the file doesn't exist or is empty
+
+    # Write back the updated data list
+    with open(saved_file_name, 'w') as f:
+        json.dump(data, f, indent=2)

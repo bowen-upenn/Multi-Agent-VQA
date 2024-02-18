@@ -102,13 +102,13 @@ class QueryVLM:
             # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
             message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. " \
                        "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
-                       "Begin your final answer with '[Reattempted Answer]' and keep your answer short, or '[Reattempted Answer Failed]' if you are still unable to answer the question." \
+                       "Begin your final answer with '[Reattempted Answer]' and keep your answer short." \
                        "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
-                       "If you believe your answer falls into the category of 'yes/no' or a number, please state 'yes/no' or provide the number after '[Answer]'. "
+                       "If you believe your answer falls into the category of 'yes/no' or a number, please state 'yes/no' or provide the number after '[Reattempted Answer]'. "
         else:
             message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
                        "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
-                       "Begin your final answer with '[Reattempted Answer]' or '[Reattempted Answer Failed]' if you are still unable to answer the question."
+                       "Begin your final answer with '[Reattempted Answer]'."
 
         # "For clarity and structure, begin each description of relation with '[Relation]' and indicate the specific objects involved by saying '[Object i] and [Object j]', " \
         # "where 'i' and 'j' refer to the object indices provided above. If the question asks about a relation, verify whether it is true in the image. " \

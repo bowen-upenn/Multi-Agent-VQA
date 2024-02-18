@@ -18,10 +18,12 @@ def inference(device, args, test_loader):
     grounding_dino = load_model(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
     LLM, VLM = QueryLLM(args), QueryVLM(args)
     grader = Grader()
+    if args['datasets']['dataset'] == 'vqa-v2':
+        answer_list = load_answer_list(args['datasets']['vqa_v2_answer_list'])
 
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
-            image_id, image_path, question, target_answer = data['image_id'], data['image_path'], data['question'], data['answer']
+            image_id, image_path, question, question_id, target_answer = data['image_id'], data['image_path'], data['question'], data['question_id'], data['answer']
             assert len(image_path) == 1
 
             image = np.asarray(Image.open(image_path[0]).convert("RGB"))
@@ -66,6 +68,9 @@ def inference(device, args, test_loader):
             if (batch_count + 1) % args['inference']['print_every'] == 0:
                 accuracy = grader.average_score()
                 print('Accuracy at batch idx ', batch_count, '(baseline, final)', accuracy)
+
+            if args['datasets']['dataset'] == 'vqa-v2':
+                save_output_predictions_vqav2(question_id, model_answer, answer_list, split=args['datasets']['vqa_v2_dataset_split'])
 
         accuracy = grader.average_score()
         print('Accuracy (baseline, final)', accuracy)
