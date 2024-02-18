@@ -33,26 +33,32 @@ for vqa_ann in tqdm(vqa_annotations):
             matched_questions.append(question)
             break  # Assuming each qid is unique, break after finding a match
 
+# Assuming we have the matched_questions from the previous step
+# Let's extract the question_ids from matched_questions
+matched_question_ids = [question['question_id'] for question in matched_questions]
+
 # Writing matched questions to a new file
 with open('/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_rest_val2014_questions.json', 'w') as outfile:
     json.dump({"questions": matched_questions}, outfile)
 
 print(f"Stored {len(matched_questions)} matched questions in v2_OpenEnded_mscoco_rest_val2014_questions.json")
 
-
-# Assuming we have the matched_questions from the previous step
-# Let's extract the question_ids from matched_questions
-matched_question_ids = [question['question_id'] for question in matched_questions]
-
+# ______________________________________________________________________________________________________________________
 # Load v2_mscoco_val2014_annotations.json
 with open('/tmp/datasets/coco/vqa/v2_mscoco_val2014_annotations.json', 'r') as file:
     coco_annotations = json.load(file)
 
-# Match annotations based on question_id
-matched_annotations = [ann for ann in coco_annotations['annotations'] if ann['question_id'] in matched_question_ids]
+# Prepare a dict to hold matched annotations keyed by question_id
+matched_annotations = {}
 
-# Writing matched annotations to a new file
+for qid in tqdm(matched_question_ids):
+    for ann in coco_annotations['annotations']:
+        if ann['question_id'] == qid:
+            matched_annotations[str(qid)] = ann
+            break  # Assuming each question_id is unique, break after finding a match
+
+# Writing matched annotations (as a dictionary) to a new file
 with open('/tmp/datasets/coco/vqa/v2_mscoco_rest_val2014_annotations.json', 'w') as outfile:
-    json.dump({"annotations": matched_annotations}, outfile)
+    json.dump(matched_annotations, outfile, indent=4)  # Use indent for pretty printing
 
 print(f"Stored {len(matched_annotations)} matched annotations in v2_mscoco_rest_val2014_annotations.json")

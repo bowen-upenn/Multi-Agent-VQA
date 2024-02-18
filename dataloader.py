@@ -75,7 +75,6 @@ class VQAv2Dataset(Dataset):
             self.answers_file = self.args['datasets']['vqa_v2_rest_val_annotations_file']
             with open(self.answers_file, 'r') as f:
                 self.answers = json.load(f)
-                self.answers = self.answers['annotations']
 
         elif self.dataset_split == 'test':
             self.images_dir = self.args['datasets']['vqa_v2_test_images_dir']
@@ -107,12 +106,16 @@ class VQAv2Dataset(Dataset):
         question = annot['question']
         question_id = annot['question_id']
         if self.answers_file is not None:
-            answer = self.answers[idx]['multiple_choice_answer']
+            if self.dataset_split == 'rest-val':    # question_id as the dictionary key
+                answer = self.answers[str(question_id)]['multiple_choice_answer']
+            else:
+                answer = self.answers[idx]['multiple_choice_answer']    # same idx order as questions
         else:
             answer = ""
 
         if self.args['inference']['verbose']:
-            curr_data = 'image_path: ' + image_path + ' question: ' + question + ' answer: ' + answer
+            curr_data = 'image_id: ' + str(image_id) + ' image_path: ' + image_path + ' question: ' + question + \
+                        ' question_id: ' + str(question_id) + ' answer: ' + answer
             print(f'{Colors.HEADER}{curr_data}{Colors.ENDC}')
 
         return {'image_id': image_id, 'image_path': image_path, 'question': question, 'question_id': question_id, 'answer': answer}

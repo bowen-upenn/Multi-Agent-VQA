@@ -2,3 +2,4 @@ __pycache__/
 myenv/
 openai_key.txt
 test_images/
+outputs/
