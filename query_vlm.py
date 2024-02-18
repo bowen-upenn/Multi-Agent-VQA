@@ -60,7 +60,8 @@ class QueryVLM:
                       "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image. " \
                       "Begin your final answer with the notation '[Answer]'. " \
                       "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
-                      "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Answer]'. " \
+                      "If you believe your answer falls into the category of 'yes/no', say 'yes/no' after '[Answer]'. " \
+                      "If you think the question type is 'how many' and asks for a number, always say '[Numeric Answer Needs Further Assistance]' and then the number, rather than '[Answer]'. " \
                       "If the answer should be an activity or a noun, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
                       "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
                       "do not make a guess, but please explain why and what you need to solve the question," \
@@ -77,49 +78,67 @@ class QueryVLM:
         return message
 
 
-    def messages_to_query_object_attributes(self, question, phrase=None):
-        # We expect each object to offer a different perspective to solve the question
-        message = "Describe the attributes and the name of the object in the image in one sentence, " \
-                  "including visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
-                  "and semantic attributes like type and current status if applicable. " \
-                  "Think about what objects you should look at to answer the question '" + question + "' in this specific image, and only focus on these objects." \
-
-        if phrase is not None:
-            message += "You need to focus on the " + phrase + " and nearby objects. "
-
-        return message
-
-
-    def messages_to_query_relations(self, question, obj_descriptions, prev_answer):
-        message = "After a previous attempt to answer the question '" + question + "' with the image, the response was not successful, " \
-                  "highlighting the need for more detailed object detection and analysis. Here is the feedback from that attempt [Previous Failed Answer: " + prev_answer + "] " \
-                  "To address this, we've identified additional objects within the image. Their descriptions are as follows: "
-
-        # if isinstance(obj_descriptions[0], list):
-        #     obj_descriptions = [obj for obj in obj_descriptions[0]]
-        for i, obj in enumerate(obj_descriptions):
-            message += "[Object " + str(i) + "] " + obj + "; "
-
-        if self.args['datasets']['dataset'] == 'vqa-v2':
-            # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
-            message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. " \
-                       "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
-                       "Summarize all the information you have, and then begin your final answer with '[Reattempted Answer]'." \
-                       "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
-                       "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Reattempted Answer]'. " \
-                       "If the answer should be an activity or a noun, say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
+    def messages_to_query_object_attributes(self, question, phrase=None, verify_numeric_answer=False):
+        if verify_numeric_answer:
+            message = "Describe the " + phrase + " in each image in one sentence that can help you answer the question '" + question + "' and count the number of " + phrase + " in the image. "
         else:
-            message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
-                       "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
-                       "Begin your final answer with '[Reattempted Answer]' or '[Reattempted Answer Failed]' if you are still unable to answer the question."
+            # We expect each object to offer a different perspective to solve the question
+            message = "Describe the attributes and the name of the object in the image in one sentence, " \
+                      "including visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
+                      "and semantic attributes like type and current status if applicable. " \
+                      "Think about what objects you should look at to answer the question '" + question + "' in this specific image, and only focus on these objects." \
+
+            if phrase is not None:
+                message += "You need to focus on the " + phrase + " and nearby objects. "
 
         return message
 
-    def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, prev_answer=None, bboxes=None, verbose=False):
+
+    def messages_to_reattempt(self, question, obj_descriptions, prev_answer, verify_numeric_answer=False, needed_objects=None):
+        if verify_numeric_answer:
+            message = "This prompt directs a VLM to reassess a visual question related to quantifying specific objects in an image. " \
+                      "The question is: '" + question + "'. Previously, the model attempted to answer this question and concluded that it needs to count the following specific " \
+                      "object(s): " + needed_objects + ", with the initial attempt yielding the answer [Previous Answer: " + prev_answer + "]. " \
+                      "To improve accuracy, an object detection model has now provided detailed descriptions for each of the required object(s) as follows"
+
+            for i, obj in enumerate(obj_descriptions):
+                message += "[Object " + str(i) + "] " + obj + "; "
+
+            previous_number = re.search(r"\[Numeric Answer Needs Further Assistance\]\s*(\d+)", prev_answer).group(1)
+
+            message += "Utilize the provided object descriptions and the outcome of the previous attempt," \
+                       "verify if there are " + previous_number + needed_objects + " in the image. Construct a reasoning that leads to your reevaluated answer step by step. " \
+                       "Start your response with '[Reattempted Answer]' and conclude with 'yes' or 'no'. "
+
+        else:
+            message = "After a previous attempt to answer the question '" + question + "' given the image, the response was not successful, " \
+                      "highlighting the need for more detailed object detection and analysis. Here is the feedback from that attempt [Previous Failed Answer: " + prev_answer + "] " \
+                      "To address this, we've identified additional objects within the image. Their descriptions are as follows: "
+
+            for i, obj in enumerate(obj_descriptions):
+                message += "[Object " + str(i) + "] " + obj + "; "
+
+            if self.args['datasets']['dataset'] == 'vqa-v2':
+                # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
+                message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. " \
+                           "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
+                           "Summarize all the information you have, and then begin your final answer with '[Reattempted Answer]'." \
+                           "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
+                           "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Reattempted Answer]'. " \
+                           "If the answer should be an activity or a noun, say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
+            else:
+                message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
+                           "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
+                           "Begin your final answer with '[Reattempted Answer]'."
+
+        return message
+
+    def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, prev_answer=None, bboxes=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
         responses = []
 
-        if step == 'relations' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
-            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer, verbose=verbose)
+        if step == 'reattempt' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
+            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
+                                                 verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
             return [response]
 
         # query on a single object
@@ -133,13 +152,14 @@ class QueryVLM:
             # process all objects from the same image in a parallel batch
             total_num_objects = len(bboxes)
             with concurrent.futures.ThreadPoolExecutor(max_workers=total_num_objects) as executor:
-                response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox, verbose=verbose), bboxes, phrases))
+                response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox, verify_numeric_answer=verify_numeric_answer,
+                                                                                            needed_objects=needed_objects, verbose=verbose), bboxes, phrases))
                 responses.append(response)
 
         return responses
 
 
-    def _query_openai_gpt_4v(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verbose=False):
+    def _query_openai_gpt_4v(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
         # we have to crop the image before converting it to base64
         base64_image = self.process_image(image, bbox)
 
@@ -149,8 +169,8 @@ class QueryVLM:
             else:
                 messages = self.messages_to_query_object_attributes(question, phrase)
             max_tokens = 400
-        elif step == 'relations':
-            messages = self.messages_to_query_relations(question, obj_descriptions, prev_answer)
+        elif step == 'reattempt':
+            messages = self.messages_to_reattempt(question, obj_descriptions, prev_answer, verify_numeric_answer, needed_objects)
             max_tokens = 600
         else:
             messages = self.messages_to_answer_directly(question)

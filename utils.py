@@ -117,12 +117,14 @@ def accumulate_grades(args, grader, grades, match_baseline_failed):
         if re.search(r'\[Correct\]', grade):
             count_match_correct += 1
     match_correct = True if count_match_correct >= 2 else False  # majority vote: if at least 2 out of 3 graders agree, the answer is correct
-    if args['inference']['verbose']:
-        if match_correct:
-            majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
+
+    if match_correct:
+        majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
+        if args['inference']['verbose']:
             print(f'{Colors.OKBLUE}{majority_vote}{Colors.ENDC}')
-        else:
-            majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
+    else:
+        majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
+        if args['inference']['verbose']:
             print(f'{Colors.FAIL}{majority_vote}{Colors.ENDC}')
 
     grader.count_total += 1
@@ -140,6 +142,7 @@ def accumulate_grades(args, grader, grades, match_baseline_failed):
         else:
             grader.count_incorrect += 1
 
+    return majority_vote
 
 def load_answer_list(file_path):
     """
@@ -217,3 +220,34 @@ def save_output_predictions_vqav2(question_id, model_answer, answer_list, split=
     # Write back the updated data list
     with open(saved_file_name, 'w') as f:
         json.dump(data, f, indent=2)
+
+
+def write_response_to_json(question_id, response_dict):
+    # Check if the JSON file already exists
+    if os.path.exists('outputs/responses.json'):
+        # Read the existing content
+        with open('outputs/responses.json', 'r') as file:
+            data = json.load(file)
+    else:
+        # Initialize an empty list if the file doesn't exist
+        data = {}
+
+    # Append the new response
+    data[str(question_id.item())] = response_dict
+
+    # Write the updated data back to the file
+    with open('outputs/responses.json', 'w') as file:
+        json.dump(data, file, indent=4)
+
+
+def record_final_accuracy(accuracy):
+    # Assuming the JSON file exists at this point
+    with open('outputs/responses.json', 'r') as file:
+        data = json.load(file)
+
+    # Add the accuracy to the JSON data
+    data['final_accuracy'] = str(accuracy)
+
+    # Write the updated data back to the file
+    with open('outputs/responses.json', 'w') as file:
+        json.dump(data, file, indent=4)

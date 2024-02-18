@@ -62,8 +62,8 @@ if __name__ == "__main__":
     if args['datasets']['use_num_test_data']:
         test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['num_test_data'])]
     else:
-        test_subset_idx = torch.randperm(len(test_dataset))[80400:] # :26800, 26800:53600, 53600:80400, 80400:107200
-        # test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
+        # test_subset_idx = torch.randperm(len(test_dataset))[80400:] # :26800, 26800:53600, 53600:80400, 80400:107200
+        test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
     test_subset = Subset(test_dataset, test_subset_idx)
     test_loader = DataLoader(test_subset, batch_size=1, shuffle=True, num_workers=0, drop_last=True)
     print('num of train, test:', 0, len(test_subset))
