@@ -28,12 +28,19 @@ if __name__ == "__main__":
     # Command-line argument parsing
     parser = argparse.ArgumentParser(description='Command line arguments')
     parser.add_argument('--dataset', type=str, default=None, help='Set dataset (gqa, vqa-v2)')
+    parser.add_argument('--split', type=str, default=None, help='Set dataset gqa: val, val-subset, test. vqa-v2: val, rest-val, val1000, test-dev, test-std')
     parser.add_argument('--verbose', dest='verbose', action='store_true', help='Set verbose to True')
     cmd_args = parser.parse_args()
 
     # Override args from config.yaml with command-line arguments if provided
     args['datasets']['dataset'] = cmd_args.dataset if cmd_args.dataset is not None else args['datasets']['dataset']
     args['inference']['verbose'] = cmd_args.verbose if cmd_args.verbose is not None else args['inference']['verbose']
+    if args['datasets']['dataset'] == 'gqa':
+        args['datasets']['gqa_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['gqa_dataset_split']
+    elif args['datasets']['dataset'] == 'vqa-v2':
+        args['datasets']['vqa_v2_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['vqa_v2_dataset_split']
+    else:
+        raise ValueError('Invalid dataset name')
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size = torch.cuda.device_count()
@@ -55,7 +62,8 @@ if __name__ == "__main__":
     if args['datasets']['use_num_test_data']:
         test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['num_test_data'])]
     else:
-        test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
+        test_subset_idx = torch.randperm(len(test_dataset))[80400:] # :26800, 26800:53600, 53600:80400, 80400:107200
+        # test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
     test_subset = Subset(test_dataset, test_subset_idx)
     test_loader = DataLoader(test_subset, batch_size=1, shuffle=True, num_workers=0, drop_last=True)
     print('num of train, test:', 0, len(test_subset))

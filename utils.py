@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import cv2
 import json
 import re
+import os
 
 from groundingdino.util.inference import annotate
 
@@ -150,7 +151,7 @@ def load_answer_list(file_path):
     return answer_list
 
 
-def save_output_predictions_vqav2(question_id, model_answer, answer_list, split='test'):
+def save_output_predictions_vqav2(question_id, model_answer, answer_list, split='test', verbose=False):
     """
     This function formats the model answers to the VQA-v2 required format
     for close-sourced evaluation on test and test-dev datasets
@@ -178,27 +179,31 @@ def save_output_predictions_vqav2(question_id, model_answer, answer_list, split=
 
         return filtered_response
 
+    # Regular expression to find sentences after '[Answer]' or '[Reattempted Answer]'
+    extracted_answer = re.search(r"\s*\[Answer\](.*)|\s*\[Reattempted Answer\](.*)", model_answer, re.DOTALL)
 
-    # Identify the marker for the start of the response
-    if '[Answer]' in model_answer:
-        start_idx = model_answer.index('[Answer]') + len('[Answer]')
-    elif '[Reattempted Answer]' in model_answer:
-        start_idx = model_answer.index('[Reattempted Answer]') + len('[Reattempted Answer]')
-    else:
-        return None  # No valid answer marker found
-
-    # Extract the response after the identified marker
-    response = model_answer[start_idx:].strip()
+    if extracted_answer:
+        extracted_answer = extracted_answer.group()
+        # Handling both '[Answer]' and '[Reattempted Answer]'
+        if "[Answer]" in extracted_answer:
+            extracted_answer = extracted_answer.replace("[Answer]", "").strip()
+        elif "[Reattempted Answer]" in extracted_answer:
+            extracted_answer = extracted_answer.replace("[Reattempted Answer]", "").strip()
 
     # Filter the extracted response using the answer list
-    filtered_response = filter_response(response, answer_list)
+    try:
+        filtered_response = filter_response(extracted_answer, answer_list)
+    except:
+        filtered_response = ""
 
     result = {
-        "question_id": question_id,
-        "answer": filtered_response if filtered_response else model_answer
+        "question_id": question_id.item(),
+        "answer": filtered_response if filtered_response else extracted_answer
     }
+    if verbose:
+        print(result)
 
-    saved_file_name = 'outputs/submit_vqav2_' + split + '.json'
+    saved_file_name = 'outputs/submit_vqav2_' + split + '_4.json'
 
     # Check if the file exists and is not empty
     if os.path.exists(saved_file_name) and os.path.getsize(saved_file_name) > 0:

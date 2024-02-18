@@ -1,23 +1,25 @@
 datasets:
   dataset: 'vqa-v2' # 'gqa', 'vqa-v2'
-  gqa_dataset_split: 'val-subset'
+  gqa_dataset_split: 'val'
   gqa_images_dir: '/tmp/datasets/gqa/images'
   gqa_val_questions_file: '/tmp/datasets/gqa/val_balanced_questions.json'
   gqa_val_subset_questions_file: '/tmp/datasets/gqa/gqasubset1000.json'
   gqa_test_questions_file: '/tmp/datasets/gqa/testdev_balanced_questions.json'
-  vqa_v2_dataset_split: 'val1000'
+  vqa_v2_dataset_split: 'rest-val'  # 'val', 'val1000', 'rest-val', 'test-dev', 'test'
   vqa_v2_val_images_dir: '/tmp/datasets/coco/val2014'
   vqa_v2_val_questions_file: '/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_val2014_questions.json'
   vqa_v2_val_annotations_file: '/tmp/datasets/coco/vqa/v2_mscoco_val2014_annotations.json'
   vqa_v2_val1000_questions_file: '/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_val2014_1000subset_questions.json'
   vqa_v2_val1000_annotations_file: '/tmp/datasets/coco/vqa/v2_mscoco_val2014_1000subset_annotations.json'
+  vqa_v2_rest_val_questions_file: '/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_rest_val2014_questions.json'
+  vqa_v2_rest_val_annotations_file: '/tmp/datasets/coco/vqa/v2_mscoco_rest_val2014_annotations.json'
   vqa_v2_test_images_dir: '/tmp/datasets/coco/test2015'
   vqa_v2_test_questions_file: '/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_test2015_questions.json'
   vqa_v2_test_dev_questions_file: '/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_test-dev2015_questions.json'
   vqa_v2_answer_list: '/tmp/datasets/coco/vqa/answer_list.json'
   percent_test: 1 #0.01
   num_test_data: 1000
-  use_num_test_data: False
+  use_num_test_data: True
 sam:
   GROUNDING_DINO_CONFIG_PATH: "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
   GROUNDING_DINO_CHECKPOINT_PATH: "Grounded-Segment-Anything/groundingdino_swint_ogc.pth"

@@ -18,8 +18,13 @@ def inference(device, args, test_loader):
     grounding_dino = load_model(args['dino']['GROUNDING_DINO_CONFIG_PATH'], args['dino']['GROUNDING_DINO_CHECKPOINT_PATH'])
     LLM, VLM = QueryLLM(args), QueryVLM(args)
     grader = Grader()
-    if args['datasets']['dataset'] == 'vqa-v2':
+
+    submit_outputs_vqa = False
+    if args['datasets']['dataset'] == 'vqa-v2' and (args['datasets']['vqa_v2_dataset_split'] == 'test' or args['datasets']['vqa_v2_dataset_split'] == 'test-dev'):
+        submit_outputs_vqa = True
         answer_list = load_answer_list(args['datasets']['vqa_v2_answer_list'])
+        # if os.path.exists('outputs/submit_vqav2_' + args['datasets']['vqa_v2_dataset_split'] + '_2.json'):
+        #     os.remove('outputs/submit_vqav2_' + args['datasets']['vqa_v2_dataset_split'] + '_2.json')
 
     with torch.no_grad():
         for batch_count, data in enumerate(tqdm(test_loader), 0):
@@ -53,24 +58,29 @@ def inference(device, args, test_loader):
                 object_attributes = VLM.query_vlm(image, question[0], step='attributes', phrases=phrases, bboxes=boxes, verbose=args['inference']['verbose'])
 
                 # merge object descriptions as a system prompt and reattempt the visual question answering
-                reattempt_answer = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes[0], prev_answer=answer, verbose=args['inference']['verbose'])
+                reattempt_answer = VLM.query_vlm(image, question[0], step='relations', obj_descriptions=object_attributes[0], prev_answer=answer, verbose=args['inference']['verbose'])[0]
 
-                # grade the answer
-                grades = []
-                for grader_id in range(3):
-                    grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=reattempt_answer[0], step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
+                if submit_outputs_vqa:
+                    save_output_predictions_vqav2(question_id, reattempt_answer, answer_list, split=args['datasets']['vqa_v2_dataset_split'], verbose=args['inference']['verbose'])
+                else:
+                    # grade the answer. vqa-v2 test and test-dev datasets do not have ground truth answers available
+                    grades = []
+                    for grader_id in range(3):
+                        grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=reattempt_answer, step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
             else:
-                grades = []
-                for grader_id in range(3):
-                    grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer, step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
+                if submit_outputs_vqa:
+                    save_output_predictions_vqav2(question_id, answer, answer_list, split=args['datasets']['vqa_v2_dataset_split'], verbose=args['inference']['verbose'])
+                else:
+                    grades = []
+                    for grader_id in range(3):
+                        grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer, step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
 
-            accumulate_grades(args, grader, grades, match_baseline_failed)
-            if (batch_count + 1) % args['inference']['print_every'] == 0:
-                accuracy = grader.average_score()
-                print('Accuracy at batch idx ', batch_count, '(baseline, final)', accuracy)
+            if not submit_outputs_vqa:
+                accumulate_grades(args, grader, grades, match_baseline_failed)
+                if (batch_count + 1) % args['inference']['print_every'] == 0:
+                    accuracy = grader.average_score()
+                    print('Accuracy at batch idx ', batch_count, '(baseline, final)', accuracy)
 
-            if args['datasets']['dataset'] == 'vqa-v2':
-                save_output_predictions_vqav2(question_id, model_answer, answer_list, split=args['datasets']['vqa_v2_dataset_split'])
-
-        accuracy = grader.average_score()
-        print('Accuracy (baseline, final)', accuracy)
+        if not submit_outputs_vqa:
+            accuracy = grader.average_score()
+            print('Accuracy (baseline, final)', accuracy)

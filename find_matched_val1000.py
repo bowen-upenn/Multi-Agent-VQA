@@ -2,19 +2,19 @@ import json
 from tqdm import tqdm
 
 """
-Given vqa.val1000.jsonl used in BEiT3 model as a validation subset of size 1000,
+Given vqa.val1000.jsonl or vqa.rest_val.jsonl used in BEiT3 model as a validation subset,
 the purpose of this script is to find the corresponding questions and annotations in vqa.val1000.jsonl
 and ensure that we are evaluating our algorithm on the same subset for a fair comparison.
 """
 
 # Load vqa.val1000.jsonl
 vqa_annotations = []
-with open('../vqa.val1000.jsonl', 'r') as file:
+with open('/tmp/datasets/coco/vqa.rest_val.jsonl', 'r') as file:
     for line in file:
         vqa_annotations.append(json.loads(line))
 
 # Load v2_OpenEnded_mscoco_val2014_questions.json
-with open('v2_OpenEnded_mscoco_val2014_questions.json', 'r') as file:
+with open('/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_val2014_questions.json', 'r') as file:
     coco_questions = json.load(file)
 
 # Function to extract image_id from the image_path
@@ -34,10 +34,10 @@ for vqa_ann in tqdm(vqa_annotations):
             break  # Assuming each qid is unique, break after finding a match
 
 # Writing matched questions to a new file
-with open('v2_OpenEnded_mscoco_val2014_1000subset_questions.json', 'w') as outfile:
+with open('/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_rest_val2014_questions.json', 'w') as outfile:
     json.dump({"questions": matched_questions}, outfile)
 
-print(f"Stored {len(matched_questions)} matched questions in v2_OpenEnded_mscoco_val2014_1000subset_questions.json")
+print(f"Stored {len(matched_questions)} matched questions in v2_OpenEnded_mscoco_rest_val2014_questions.json")
 
 
 # Assuming we have the matched_questions from the previous step
@@ -45,14 +45,14 @@ print(f"Stored {len(matched_questions)} matched questions in v2_OpenEnded_mscoco
 matched_question_ids = [question['question_id'] for question in matched_questions]
 
 # Load v2_mscoco_val2014_annotations.json
-with open('v2_mscoco_val2014_annotations.json', 'r') as file:
+with open('/tmp/datasets/coco/vqa/v2_mscoco_val2014_annotations.json', 'r') as file:
     coco_annotations = json.load(file)
 
 # Match annotations based on question_id
 matched_annotations = [ann for ann in coco_annotations['annotations'] if ann['question_id'] in matched_question_ids]
 
 # Writing matched annotations to a new file
-with open('v2_mscoco_val2014_1000subset_annotations.json', 'w') as outfile:
+with open('/tmp/datasets/coco/vqa/v2_mscoco_rest_val2014_annotations.json', 'w') as outfile:
     json.dump({"annotations": matched_annotations}, outfile)
 
-print(f"Stored {len(matched_annotations)} matched annotations in v2_mscoco_val2014_1000subset_annotations.json")
+print(f"Stored {len(matched_annotations)} matched annotations in v2_mscoco_rest_val2014_annotations.json")

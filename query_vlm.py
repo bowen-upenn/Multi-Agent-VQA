@@ -9,6 +9,7 @@ import base64
 import requests
 import concurrent.futures
 from torchvision.ops import box_convert
+import re
 
 
 class QueryVLM:
@@ -57,12 +58,13 @@ class QueryVLM:
                       "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
                       "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
                       "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image. " \
-                      "Begin your final answer with the notation '[Answer]' and keep your answers short. " \
+                      "Begin your final answer with the notation '[Answer]'. " \
                       "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
-                      "If you believe your answer falls into the category of 'yes/no' or a number, please state 'yes/no' or provide the number after '[Answer]'. " \
+                      "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Answer]'. " \
+                      "If the answer should be an activity or a noun, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
                       "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
                       "do not make a guess, but please explain why and what you need to solve the question," \
-                      "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'."
+                      "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'. Keep your answers short"
         else:
             message = "You are performing a Visual Question Answering task." \
                       "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
@@ -102,31 +104,14 @@ class QueryVLM:
             # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
             message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. " \
                        "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
-                       "Begin your final answer with '[Reattempted Answer]' and keep your answer short." \
+                       "Summarize all the information you have, and then begin your final answer with '[Reattempted Answer]'." \
                        "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
-                       "If you believe your answer falls into the category of 'yes/no' or a number, please state 'yes/no' or provide the number after '[Reattempted Answer]'. "
+                       "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Reattempted Answer]'. " \
+                       "If the answer should be an activity or a noun, say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
         else:
             message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
                        "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
-                       "Begin your final answer with '[Reattempted Answer]'."
-
-        # "For clarity and structure, begin each description of relation with '[Relation]' and indicate the specific objects involved by saying '[Object i] and [Object j]', " \
-        # "where 'i' and 'j' refer to the object indices provided above. If the question asks about a relation, verify whether it is true in the image. " \
-            # message = "This is an image that contains the following objects with their descriptions, separated by the semi-colon ';': "
-        #
-        # if isinstance(obj_descriptions[0], list):
-        #     obj_descriptions = [obj for obj in obj_descriptions[0]]
-        # for i, obj in enumerate(obj_descriptions):
-        #     message += "[Object " + str(i) + "] " + obj + "; "
-        #
-        # message += "Please describe the relations between these objects in the image to build a local scene graph, " \
-        #            "with a focus on those relations related to solving the question " + question + ". " \
-        #            "You can describe the spatial, semantic, possessive relations, the interactions, and the causal relations between objects in one sentence. " \
-        #            "Always begin each relation with the notation '[Relation]' and specify which two objects you are currently looking at by saying " \
-        #            "[Object i] and [Object j], where 'i' and 'j' are object indices mentioned above. "
-        #
-        # message += "Finally, given all the information above and the associated image as a whole scene, " \
-        #            "please answer the question " + question + " step by step, and always begin your answer with the notation '[Answer]'. "
+                       "Begin your final answer with '[Reattempted Answer]' or '[Reattempted Answer Failed]' if you are still unable to answer the question."
 
         return message
 
@@ -163,47 +148,52 @@ class QueryVLM:
                 messages = self.messages_to_query_object_attributes(question)
             else:
                 messages = self.messages_to_query_object_attributes(question, phrase)
-            max_tokens = 300
+            max_tokens = 400
         elif step == 'relations':
             messages = self.messages_to_query_relations(question, obj_descriptions, prev_answer)
-            max_tokens = 500
+            max_tokens = 600
         else:
             messages = self.messages_to_answer_directly(question)
-            max_tokens = 300
+            max_tokens = 400
 
-        # Form the prompt including the image.
-        # Due to the strong performance of the vision model, we omit multiple queries and majority vote to reduce costs
-        # print('Prompt: ', messages)
-        prompt = {
-            "model": "gpt-4-vision-preview",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": messages},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                    ]
-                }
-            ],
-            "max_tokens": max_tokens
-        }
+        # Retry if GPT response is like "I'm sorry, I cannot assist with this request"
+        for _ in range(3):
+            # Form the prompt including the image.
+            # Due to the strong performance of the vision model, we omit multiple queries and majority vote to reduce costs
+            # print('Prompt: ', messages)
+            prompt = {
+                "model": "gpt-4-vision-preview",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": messages},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
+                        ]
+                    }
+                ],
+                "max_tokens": max_tokens
+            }
 
-        # Send request to OpenAI API
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}"
-        }
-        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=prompt)
-        response_json = response.json()
+            # Send request to OpenAI API
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.api_key}"
+            }
+            response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=prompt)
+            response_json = response.json()
 
-        # Process the response
-        # Check if the response is valid and contains the expected data
-        if 'choices' in response_json and len(response_json['choices']) > 0:
-            completion_text = response_json['choices'][0].get('message', {}).get('content', '')
+            # Process the response
+            # Check if the response is valid and contains the expected data
+            if 'choices' in response_json and len(response_json['choices']) > 0:
+                completion_text = response_json['choices'][0].get('message', {}).get('content', '')
 
-            if verbose:
-                print(f'VLM Response: {completion_text}')
+                if verbose:
+                    print(f'VLM Response: {completion_text}')
+            else:
+                completion_text = ""
 
-            return completion_text
-        else:
-            return ""
+            if step == 'ask_directly' or (not re.search(r'sorry|cannot assist|can not assist|can\'t assist', completion_text, re.IGNORECASE)):
+                break
+
+        return completion_text
