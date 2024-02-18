@@ -60,7 +60,14 @@ class VQAv2Dataset(Dataset):
             with open(self.answers_file, 'r') as f:
                 self.answers = json.load(f)
                 self.answers = self.answers['annotations']    # it is a list of dictionaries
-            print('answers', self.answers[0])
+
+        elif self.dataset_split == 'val1000':
+            self.images_dir = self.args['datasets']['vqa_v2_val_images_dir']
+            self.questions_file = self.args['datasets']['vqa_v2_val1000_questions_file']
+            self.answers_file = self.args['datasets']['vqa_v2_val1000_annotations_file']
+            with open(self.answers_file, 'r') as f:
+                self.answers = json.load(f)
+                self.answers = self.answers['annotations']
 
         elif self.dataset_split == 'test':
             self.images_dir = self.args['datasets']['vqa_v2_test_images_dir']
@@ -83,7 +90,7 @@ class VQAv2Dataset(Dataset):
         annot = self.questions[idx]
 
         image_id = annot['image_id']
-        if self.dataset_split == 'val':
+        if self.dataset_split == 'val' or self.dataset_split == 'val1000':
             image_path = os.path.join(self.images_dir, f"COCO_val2014_{image_id:012}.jpg")
         else:
             image_path = os.path.join(self.images_dir, f"COCO_test2015_{image_id:012}.jpg")
