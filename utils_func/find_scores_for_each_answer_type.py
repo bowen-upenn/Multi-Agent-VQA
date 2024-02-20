@@ -28,10 +28,11 @@ def process_responses(file_path):
 
 # List of response files
 response_files = [
-    '../outputs/responses1.json',
-    '../outputs/responses2.json',
-    '../outputs/responses3.json',
-    '../outputs/responses4.json'
+    '../outputs/responses4_feb20.json',
+    # '../outputs/responses1.json',
+    # '../outputs/responses2.json',
+    # '../outputs/responses3.json',
+    # '../outputs/responses4.json'
 ]
 
 # Process each response file

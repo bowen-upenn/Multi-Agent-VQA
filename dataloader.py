@@ -90,6 +90,9 @@ class VQAv2Dataset(Dataset):
             self.questions = json.load(f)
             self.questions = self.questions['questions']    # it is a list of dictionaries
 
+        # self.questions = [annot for annot in self.questions if annot['question_id'] == 377239000]
+        # print(f'len(self.questions): {len(self.questions)}', self.questions)
+
     def __len__(self):
         # VQA-v2 test-dev 107394
         return len(self.questions)
@@ -105,6 +108,7 @@ class VQAv2Dataset(Dataset):
 
         question = annot['question']
         question_id = annot['question_id']
+
         if self.answers_file is not None:
             if self.dataset_split == 'rest-val':    # question_id as the dictionary key
                 answer = self.answers[str(question_id)]['multiple_choice_answer']

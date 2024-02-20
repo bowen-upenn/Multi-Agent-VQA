@@ -60,11 +60,16 @@ class QueryVLM:
                       "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image. " \
                       "Begin your final answer with the notation '[Answer]'. " \
                       "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
-                      "If you believe your answer falls into the category of 'yes/no', say 'yes/no' after '[Answer]'. " \
+                      "(Case 1) If you believe your answer falls into the category of 'yes/no', say 'yes/no' after '[Answer]'. " \
                       "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
                       "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
-                      "If the answer should be an activity or a noun, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
-                      "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
+                      "(Case 2) If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
+                      "pay attention to whether the question has specified any attributes that only a subset of these objects may satisfy." \
+                      "If you can't find any of such object, answer '[Zero Numeric Answer]' and '[Answer Failed]'. If there are too many of them, answer '[Non-zero Numeric Answer]' and '[Answer Failed]'. " \
+                      "Otherwise, answer '[Numeric Answer]', step-by-step describe each object in this image that satisfy the descriptions in the question, " \
+                      "list each one by [Object i] where i is the index, and finally predict the number. " \
+                      "(Case 3) If the answer should be an activity or a noun, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
+                      "(Case 4) If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
                       "do not make a guess, but please explain why and what you need to solve the question," \
                       "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'. Keep your answers short"
         else:
@@ -81,10 +86,10 @@ class QueryVLM:
 
     def message_to_check_if_answer_is_numeric(self, question):
         message = "You are performing a Visual Question Answering task. " \
-                  "Given the image and the question '" + question + "', please first verify if the question type is 'how many' and asks you to count the number of an object. " \
+                  "Given the image and the question '" + question + "', please first verify if the question type is like 'how many' or 'what number of' and asks you to count the number of an object. " \
                   "If not, say '[Not Numeric Answer]' and explain why. " \
                   "Otherwise, find which object you need to count, say '[Numeric Answer]', and predict the number. " \
-                  "In this case, if you think there isn't any of this object in the image, i.e. the number is 0, say '[Answer Failed]' instead and show your step-by-step reasoning. "
+                  # "In this case, if you think there isn't any of this object in the image, i.e. the number is 0, say '[Answer Failed]' and show your step-by-step reasoning. "
         return message
 
 
@@ -107,8 +112,7 @@ class QueryVLM:
     def messages_to_reattempt(self, question, obj_descriptions, prev_answer, verify_numeric_answer=False, needed_objects=None):
         if verify_numeric_answer:
             message = "This prompt directs a VLM to reassess a visual question related to quantifying specific objects in an image. " \
-                      "The question is: '" + question + "'. Previously, the model attempted to answer this question and concluded that it needs to count the following specific " \
-                      "object(s): " + needed_objects + ", with the initial attempt yielding the answer [Previous Answer: " + prev_answer + "]. " \
+                      "The question is: '" + question + "'. Previously, the model attempted to answer this question with the initial attempt [Previous Answer: " + prev_answer + "]. " \
                       "To improve accuracy, an object detection model has now provided detailed descriptions for each of the required object(s) as follows"
 
             for i, obj in enumerate(obj_descriptions):
@@ -117,8 +121,10 @@ class QueryVLM:
             previous_number = re.search(r"\[Numeric Answer Needs Further Assistance\]\s*(\d+)", prev_answer).group(1)
 
             message += "Utilize the provided object descriptions and the outcome of the previous attempt," \
-                       "verify if there are " + previous_number + needed_objects + " in the image. Construct a reasoning that leads to your reevaluated answer step by step. " \
-                       "Start your response with '[Reattempted Answer]' and conclude with 'yes' or 'no'. "
+                       "verify if there are " + previous_number + needed_objects + " in the image. " \
+                       "Again, step-by-step describe each object in this image that satisfy the descriptions in the question, " \
+                       "list each one by [Object i] where i is the index, and finally reevaluated the number. " \
+                       "Start your response with '[Reattempted Answer]'. "
 
         else:
             message = "After a previous attempt to answer the question '" + question + "' given the image, the response was not successful, " \
@@ -137,6 +143,8 @@ class QueryVLM:
                            "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Reattempted Answer]'. " \
                            "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
                            "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
+                           "If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
+                           "step-by-step describe each object in this image that satisfy the descriptions in the question, list each one by [Object i] where i is the index, and finally reevaluated the number after '[Reattempted Answer]'. " \
                            "If the answer should be an activity or a noun, say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
             else:
                 message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \

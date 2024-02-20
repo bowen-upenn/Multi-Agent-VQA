@@ -3,8 +3,8 @@ from torch.cuda.amp import autocast
 import torchvision.transforms as T
 from PIL import Image
 
-from CLIP_Count.util.constant import SCALE_FACTOR
-
+# from CLIP_Count.util.constant import SCALE_FACTOR
+SCALE_FACTOR = 80
 
 preprocess = T.Compose([
         T.Resize((224, 224)),
@@ -28,7 +28,9 @@ def query_clip_count(device, image, clip_count, prompts, verbose=False, save_hea
         if save_heat_map:
             transform = T.ToPILImage()
             pil_img = transform(output)
-            pil_img.save("output_image.jpg", "JPEG")
+            pil_img.save("heat_map.jpg", "JPEG")
+            pil_img = transform(image[0])
+            pil_img.save("original_image.jpg", "JPEG")
 
         if verbose:
             print('[Reattempted Answer] ' + str(count))

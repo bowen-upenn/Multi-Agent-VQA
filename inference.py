@@ -32,27 +32,28 @@ def inference(device, args, test_loader):
 
             image = np.asarray(Image.open(image_path[0]).convert("RGB"))
 
-            """ There could be three cases at the beginning
-            1. The question is about counting, i.e., [Numeric Answer]: verify_numeric_answer is True and match_baseline_failed is False
-            2. The question is about counting, but the model failed to find any object to be counted or the number maybe zero, i.e., [Answer Failed]: verify_numeric_answer is False and match_baseline_failed is True
-            3. The question is not about counting, i.e., [Not Numeric Answer]: verify_numeric_answer is False and match_baseline_failed is False
-            """
-            # check if the answer should be a numeric answer
-            answer = VLM.query_vlm(image, question[0], step='check_numeric_answer', verbose=args['inference']['verbose'])[0]
-            verify_numeric_answer = args['datasets']['dataset'] == 'vqa-v2' and re.search(r'\[Numeric Answer\]', answer) is not None
-            # if the model thinks the numeric answer is zero, i.e., it couldn't find any object to be counted, it will return a failed answer
+            # """ There could be three cases at the beginning
+            # 1. The question is about counting, i.e., [Numeric Answer]: verify_numeric_answer is True and match_baseline_failed is False
+            # 2. The question is about counting, but the model failed to find any object to be counted or the number maybe zero, i.e., [Answer Failed]: verify_numeric_answer is False and match_baseline_failed is True
+            # 3. The question is not about counting, i.e., [Not Numeric Answer]: verify_numeric_answer is False and match_baseline_failed is False
+            # """
+            # # check if the answer should be a numeric answer
+            # answer = VLM.query_vlm(image, question[0], step='check_numeric_answer', verbose=args['inference']['verbose'])[0]
+            # verify_numeric_answer = args['datasets']['dataset'] == 'vqa-v2' and re.search(r'\[Numeric Answer\]', answer) is not None
+            # # if the model thinks the numeric answer is zero, i.e., it couldn't find any object to be counted, it will return a failed answer
+            # match_baseline_failed = re.search(r'\[Answer Failed\]', answer) is not None or re.search(r'sorry', answer.lower()) is not None or len(answer) == 0
+            # if match_baseline_failed:
+            #     verify_numeric_answer = False   # ensure that the model does not output both [Numeric Answer] and [Answer Failed] at the same time
+            #
+            # # if the question is not about counting, first try to answer the visual question using the baseline large VLM model directly without calling multi-agents
+            # if not verify_numeric_answer and not match_baseline_failed:
+            answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])[0]
+
+            # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
             match_baseline_failed = re.search(r'\[Answer Failed\]', answer) is not None or re.search(r'sorry', answer.lower()) is not None or len(answer) == 0
+            verify_numeric_answer = re.search(r'\[Non-zero Numeric Answer\]', answer) is not None
+
             if match_baseline_failed:
-                verify_numeric_answer = False   # ensure that the model does not output both [Numeric Answer] and [Answer Failed] at the same time
-
-            # if the question is not about counting, first try to answer the visual question using the baseline large VLM model directly without calling multi-agents
-            if not verify_numeric_answer and not match_baseline_failed:
-                answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])[0]
-
-                # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
-                match_baseline_failed = re.search(r'\[Answer Failed\]', answer) is not None or re.search(r'sorry', answer.lower()) is not None or len(answer) == 0
-
-            if match_baseline_failed or verify_numeric_answer:
                 if args['inference']['verbose']:
                     if verify_numeric_answer:
                         msg = "The baseline model needs further assistance to predict a numeric answer. Reattempting with multi-agents."
