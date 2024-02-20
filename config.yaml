@@ -46,5 +46,5 @@ inference:
   force_multi_agents: False
   nearby_bbox_iou_threshold: 0.5
   print_every: 50
-  output_response_filename: 'outputs/responses.json'
-  save_output_response: False
+  output_response_filename: 'outputs/responses4_feb20.json'
+  save_output_response: True

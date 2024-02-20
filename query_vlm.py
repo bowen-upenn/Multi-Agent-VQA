@@ -82,9 +82,9 @@ class QueryVLM:
     def message_to_check_if_answer_is_numeric(self, question):
         message = "You are performing a Visual Question Answering task. " \
                   "Given the image and the question '" + question + "', please first verify if the question type is 'how many' and asks you to count the number of an object. " \
-                  "If not, say '[Not Numeric Answer]' " \
-                  "Otherwise, find which object you need to count, and say '[Numeric Answer]' with the number. " \
-                  "If there isn't any of this object in the image, i.e. the number is 0, say '[Answer Failed]' instead. "
+                  "If not, say '[Not Numeric Answer]' and explain why. " \
+                  "Otherwise, find which object you need to count, say '[Numeric Answer]', and predict the number. " \
+                  "In this case, if you think there isn't any of this object in the image, i.e. the number is 0, say '[Answer Failed]' instead and show your step-by-step reasoning. "
         return message
 
 
