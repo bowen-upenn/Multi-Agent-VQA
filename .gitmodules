@@ -6,3 +6,6 @@
 	path = unilm
 	url = git@github.com:bowen-upenn/unilm.git
 	branch = master
+[submodule "CLIP_Count"]
+	path = CLIP_Count
+	url = git@github.com:songrise/CLIP-Count.git

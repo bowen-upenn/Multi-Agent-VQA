@@ -20,11 +20,19 @@ class Grader:
     def average_score(self):
         """Calculate and return the average score of the grades."""
         if self.count_total == 0:
-            return 0  # Return 0 if there are no grades to avoid division by zero
+            return 0, 0, None  # Return 0 if there are no grades to avoid division by zero
 
         accuracy_baseline = self.count_correct_baseline / self.count_total
         accuracy = self.count_correct / self.count_total
-        return accuracy_baseline, accuracy
+
+        stat = {
+            'count_correct': self.count_correct,
+            'count_incorrect': self.count_incorrect,
+            'count_correct_baseline': self.count_correct_baseline,
+            'count_incorrect_baseline': self.count_incorrect_baseline,
+            'count_total': self.count_total
+        }
+        return accuracy_baseline, accuracy, stat
 
 
 def calculate_iou_batch(a, b):
@@ -222,11 +230,11 @@ def save_output_predictions_vqav2(question_id, model_answer, answer_list, split=
         json.dump(data, f, indent=2)
 
 
-def write_response_to_json(question_id, response_dict):
+def write_response_to_json(question_id, response_dict, output_response_filename):
     # Check if the JSON file already exists
-    if os.path.exists('outputs/responses.json'):
+    if os.path.exists(output_response_filename):
         # Read the existing content
-        with open('outputs/responses.json', 'r') as file:
+        with open(output_response_filename, 'r') as file:
             data = json.load(file)
     else:
         # Initialize an empty list if the file doesn't exist
@@ -236,18 +244,20 @@ def write_response_to_json(question_id, response_dict):
     data[str(question_id.item())] = response_dict
 
     # Write the updated data back to the file
-    with open('outputs/responses.json', 'w') as file:
+    with open(output_response_filename, 'w') as file:
         json.dump(data, file, indent=4)
 
 
-def record_final_accuracy(accuracy):
+def record_final_accuracy(baseline_accuracy, final_accuracy, stats, output_response_filename):
     # Assuming the JSON file exists at this point
-    with open('outputs/responses.json', 'r') as file:
+    with open(output_response_filename, 'r') as file:
         data = json.load(file)
 
     # Add the accuracy to the JSON data
-    data['final_accuracy'] = str(accuracy)
+    data['baseline_accuracy'] = str(baseline_accuracy)
+    data['final_accuracy'] = str(final_accuracy)
+    data['stats'] = stats
 
     # Write the updated data back to the file
-    with open('outputs/responses.json', 'w') as file:
+    with open(output_response_filename, 'w') as file:
         json.dump(data, file, indent=4)

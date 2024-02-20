@@ -19,7 +19,7 @@ datasets:
   vqa_v2_answer_list: '/tmp/datasets/coco/vqa/answer_list.json'
   percent_test: 1 #0.01
   num_test_data: 10
-  use_num_test_data: True
+  use_num_test_data: False
 sam:
   GROUNDING_DINO_CONFIG_PATH: "Grounded-Segment-Anything/GroundingDINO/groundingdino/config/GroundingDINO_SwinT_OGC.py"
   GROUNDING_DINO_CHECKPOINT_PATH: "Grounded-Segment-Anything/groundingdino_swint_ogc.pth"
@@ -46,3 +46,5 @@ inference:
   force_multi_agents: False
   nearby_bbox_iou_threshold: 0.5
   print_every: 50
+  output_response_filename: 'outputs/responses.json'
+  save_output_response: False

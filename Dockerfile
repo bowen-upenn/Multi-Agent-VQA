@@ -44,6 +44,14 @@ RUN pip install --no-cache-dir diffusers[torch]==0.15.1 opencv-python==4.7.0.72 
     pycocotools==2.0.6 matplotlib==3.5.3 \
     onnxruntime==1.14.1 onnx==1.13.1 ipykernel==6.16.2 scipy gradio openai
 
+# Installing CLIP-Count requirements
+WORKDIR /usr/src/app/vlm4sgg/CLIP_Count
+RUN pip install -r requirements.txt  \
+    && pip install ftfy regex tqdm imgaug einops pytorch-lightning  \
+    && pip install git+https://github.com/openai/CLIP.git
+
+WORKDIR /usr/src/app/vlm4sgg/
+
 # Now, the requirements.txt file is within the build context, so no need to step out.
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt

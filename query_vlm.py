@@ -61,6 +61,8 @@ class QueryVLM:
                       "Begin your final answer with the notation '[Answer]'. " \
                       "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
                       "If you believe your answer falls into the category of 'yes/no', say 'yes/no' after '[Answer]'. " \
+                      "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
+                      "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
                       "If you think the question type is 'how many' and asks for a number, always say '[Numeric Answer Needs Further Assistance]' and then the number, rather than '[Answer]'. " \
                       "If the answer should be an activity or a noun, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
                       "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
@@ -125,6 +127,8 @@ class QueryVLM:
                            "Summarize all the information you have, and then begin your final answer with '[Reattempted Answer]'." \
                            "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
                            "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Reattempted Answer]'. " \
+                           "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
+                           "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
                            "If the answer should be an activity or a noun, say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
             else:
                 message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
