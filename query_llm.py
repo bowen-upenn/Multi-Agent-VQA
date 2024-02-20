@@ -7,7 +7,6 @@ import json
 from openai import OpenAI
 import random
 import cv2
-
 from utils import *
 
 
@@ -16,6 +15,16 @@ class QueryLLM:
         with open("openai_key.txt", "r") as api_key_file:
             self.api_key = api_key_file.read()
             self.args = args
+
+
+    def message_to_check_if_answer_is_numeric(self, question):
+        message = [
+            {"role": "system", "content": "You are performing a Visual Question Answering task. "
+                                          "Please first verify if the question type is 'how many' and asks you to count the number of an object. "
+                                          "If so, say '[Numeric Answer]'. Otherwise, say '[Not Numeric Answer]' "},
+            {"role": "user", "content": '[Question] ' + question}
+        ]
+        return message
 
 
     def messages_to_extract_related_objects(self, question):
@@ -139,7 +148,9 @@ class QueryLLM:
     def _query_openai_gpt_3p5(self, prompt, step, previous_response=None, target_answer=None, model_answer=None, grader_id=0, verify_numeric_answer=False, verbose=False):
         client = OpenAI(api_key=self.api_key)
 
-        if step == 'related_objects':
+        if step == 'check_numeric_answer':
+            messages = self.message_to_check_if_answer_is_numeric(prompt)
+        elif step == 'related_objects':
             messages = self.messages_to_extract_related_objects(prompt)
         elif step == 'needed_objects':
             messages = self.messages_to_extract_needed_objects(prompt, previous_response, verify_numeric_answer)

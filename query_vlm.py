@@ -55,7 +55,7 @@ class QueryVLM:
         if self.args['datasets']['dataset'] == 'vqa-v2':
             # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
             message = "You are performing a Visual Question Answering task." \
-                      "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
+                      "Given the image and the question '" + question + "', explain what the question wants to ask, what objects or objects with specific attributes" \
                       "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
                       "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image. " \
                       "Begin your final answer with the notation '[Answer]'. " \
@@ -63,7 +63,6 @@ class QueryVLM:
                       "If you believe your answer falls into the category of 'yes/no', say 'yes/no' after '[Answer]'. " \
                       "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
                       "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
-                      "If you think the question type is 'how many' and asks for a number, always say '[Numeric Answer Needs Further Assistance]' and then the number, rather than '[Answer]'. " \
                       "If the answer should be an activity or a noun, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
                       "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
                       "do not make a guess, but please explain why and what you need to solve the question," \
@@ -77,6 +76,15 @@ class QueryVLM:
                       "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
                       "do not make a guess, but please explain why and what you need to solve the question," \
                       "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'."
+        return message
+
+
+    def message_to_check_if_answer_is_numeric(self, question):
+        message = "You are performing a Visual Question Answering task. " \
+                  "Given the image and the question '" + question + "', please first verify if the question type is 'how many' and asks you to count the number of an object. " \
+                  "If not, say '[Not Numeric Answer]' " \
+                  "Otherwise, find which object you need to count, and say '[Numeric Answer]' with the number. " \
+                  "If there isn't any of this object in the image, i.e. the number is 0, say '[Answer Failed]' instead. "
         return message
 
 
@@ -167,7 +175,13 @@ class QueryVLM:
         # we have to crop the image before converting it to base64
         base64_image = self.process_image(image, bbox)
 
-        if step == 'attributes':
+        if step == 'ask_directly':
+            messages = self.messages_to_answer_directly(question)
+            max_tokens = 400
+        elif step == 'check_numeric_answer':
+            messages = self.message_to_check_if_answer_is_numeric(question)
+            max_tokens = 300
+        elif step == 'attributes':
             if phrase is None or bbox is None:
                 messages = self.messages_to_query_object_attributes(question)
             else:
@@ -177,8 +191,7 @@ class QueryVLM:
             messages = self.messages_to_reattempt(question, obj_descriptions, prev_answer, verify_numeric_answer, needed_objects)
             max_tokens = 600
         else:
-            messages = self.messages_to_answer_directly(question)
-            max_tokens = 400
+            raise ValueError('Invalid step')
 
         # Retry if GPT response is like "I'm sorry, I cannot assist with this request"
         for _ in range(3):

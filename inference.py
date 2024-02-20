@@ -32,17 +32,30 @@ def inference(device, args, test_loader):
 
             image = np.asarray(Image.open(image_path[0]).convert("RGB"))
 
-            # try to answer the visual question using the baseline large VLM model directly without calling multi-agents
-            answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])[0]
+            """ There could be three cases
+            1. The question is about counting, i.e., [Numeric Answer]: verify_numeric_answer is True and match_baseline_failed is False
+            2. The question is about counting, but the model failed to find any object to be counted or the number maybe zero, i.e., [Answer Failed]: verify_numeric_answer is False and match_baseline_failed is True
+            3. The question is not about counting, i.e., [Not Numeric Answer]: verify_numeric_answer is False and match_baseline_failed is False
+            """
+            # check if the answer should be a numeric answer
+            answer = VLM.query_vlm(image, question[0], step='check_numeric_answer', verbose=args['inference']['verbose'])[0]
+            verify_numeric_answer = args['datasets']['dataset'] == 'vqa-v2' and re.search(r'\[Numeric Answer\]', answer) is not None
+            # if the model thinks the numeric answer is zero, i.e., it couldn't find any object to be counted, it will return a failed answer
+            match_baseline_failed = re.search(r'\[Answer Failed\]', answer) is not None or re.search(r'sorry', answer.lower()) is not None or len(answer) == 0
 
-            # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
-            match_baseline_failed = re.search(r'\[Answer Failed\]', answer) is not None or re.search(r'sorry', answer.lower()) is not None or \
-                                    re.search(r'\[Numeric Answer Needs Further Assistance\]', answer) is not None or len(answer) == 0
-            verify_numeric_answer = args['datasets']['dataset'] == 'vqa-v2' and re.search(r'\[Numeric Answer Needs Further Assistance\]', answer) is not None
+            # if the question is not about counting, first try to answer the visual question using the baseline large VLM model directly without calling multi-agents
+            if not verify_numeric_answer and not match_baseline_failed:
+                answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])[0]
 
-            if match_baseline_failed:
+                # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
+                match_baseline_failed = re.search(r'\[Answer Failed\]', answer) is not None or re.search(r'sorry', answer.lower()) is not None or len(answer) == 0
+
+            if match_baseline_failed or verify_numeric_answer:
                 if args['inference']['verbose']:
-                    msg = "The baseline model failed to answer the question or needed further assistance to verify a numeric answer. Reattempting with multi-agents."
+                    if verify_numeric_answer:
+                        msg = "The baseline model needs further assistance to predict a numeric answer. Reattempting with multi-agents."
+                    else:
+                        msg = "The baseline model failed to answer the question initially with missing objects. Reattempting with multi-agents."
                     print(f'{Colors.WARNING}{msg}{Colors.ENDC}')
 
                 # extract object instances needed to solve the visual question answering task
@@ -50,7 +63,7 @@ def inference(device, args, test_loader):
                                                verify_numeric_answer=verify_numeric_answer, verbose=args['inference']['verbose'])
 
                 if verify_numeric_answer:
-                    reattempt_answer = query_clip_count(device, image, clip_count, prompts=needed_objects)
+                    reattempt_answer = query_clip_count(device, image, clip_count, prompts=needed_objects, verbose=args['inference']['verbose'])
                 else:
                     # query grounded sam on the input image. the 'boxes' is a tensor of shape (N, 4) where N is the number of object instances in the image,
                     # the 'logits' is a tensor of shape (N), and the 'phrases' is a list of length (N) such as ['table', 'door']
@@ -65,7 +78,7 @@ def inference(device, args, test_loader):
 
                 # grade the answer. vqa-v2 test and test-dev datasets do not have ground truth answers available
                 grades = []
-                for grader_id in range(num_graders):
+                for grader_id in range(3):
                     grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=reattempt_answer, step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
 
                 # record responses to json file

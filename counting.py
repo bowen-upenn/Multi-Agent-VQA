@@ -13,7 +13,7 @@ preprocess = T.Compose([
     ])
 
 
-def query_clip_count(device, image, clip_count, prompts, save_heat_map=False):
+def query_clip_count(device, image, clip_count, prompts, verbose=False, save_heat_map=False):
     # Prepare the image
     image = Image.fromarray(image)
     image = preprocess(image).float().unsqueeze(0)
@@ -29,6 +29,8 @@ def query_clip_count(device, image, clip_count, prompts, save_heat_map=False):
             transform = T.ToPILImage()
             pil_img = transform(output)
             pil_img.save("output_image.jpg", "JPEG")
-            print('Output:', output.shape, count)
+
+        if verbose:
+            print('[Reattempted Answer] ' + str(count))
 
     return '[Reattempted Answer] ' + str(count)
