@@ -3,3 +3,4 @@ myenv/
 openai_key.txt
 test_images/
 outputs/
+*.jpg
