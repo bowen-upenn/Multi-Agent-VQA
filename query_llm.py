@@ -7,6 +7,7 @@ import json
 from openai import OpenAI
 import random
 import cv2
+import concurrent.futures
 from utils import *
 
 
@@ -17,12 +18,11 @@ class QueryLLM:
             self.args = args
 
 
-    def message_to_check_if_answer_is_numeric(self, question):
+    def message_to_check_if_the_number_is_large(self, answer):
         message = [
-            {"role": "system", "content": "You are performing a Visual Question Answering task. "
-                                          "Please first verify if the question type is 'how many' and asks you to count the number of an object. "
-                                          "If so, say '[Numeric Answer]'. Otherwise, say '[Not Numeric Answer]' "},
-            {"role": "user", "content": '[Question] ' + question}
+            {"role": "system", "content": "Your task is to verify if the number mentioned in the answer after '[Numeric Answer]' is larger than three. "
+                                          "If so, say '[Yes]'. Otherwise, say '[No]'."},
+            {"role": "user", "content": '[Answer] ' + answer}
         ]
         return message
 
@@ -43,9 +43,7 @@ class QueryLLM:
     def messages_to_extract_needed_objects(self, question, previous_response, verify_numeric_answer=False):
         if verify_numeric_answer:
             messages = [
-                {"role": "system", "content": "Based on a response from a large vision-language model (VLM) regarding a visual question-answering task, "
-                                              "it seems necessary to provide a numerical answer to a question: '" + question + "'. "
-                                              "Your task is to identify the specific object mentioned in the question that needs to be counted in the image. "
+                {"role": "system", "content": "Your task is to identify the object mentioned in the question: '" + question + " that needs to be counted in the image. "
                                               "Please list only those object that needs to be counted, ignoring all other objects mentioned in the question. "
                                               "Format your response as a single line like 'Object1'. This information will assist in directing an additional object counting model to "
                                               "more accurately locate and count the specified object(s). "},
@@ -139,7 +137,7 @@ class QueryLLM:
                                                                                                 grader_id=grader_id, verify_numeric_answer=verify_numeric_answer, verbose=verbose), batch_prompts))
                 else:
                     batch_responses = list(executor.map(lambda prompt: self._query_openai_gpt_3p5(prompt, step, previous_response=previous_response, target_answer=target_answer, model_answer=model_answer,
-                                                                                                  grader_id=grader_id, verify_numeric_answe=verify_numeric_answer, verbose=verbose), batch_prompts))
+                                                                                                  grader_id=grader_id, verify_numeric_answer=verify_numeric_answer, verbose=verbose), batch_prompts))
             responses.extend(batch_responses)
 
         return responses
@@ -149,7 +147,7 @@ class QueryLLM:
         client = OpenAI(api_key=self.api_key)
 
         if step == 'check_numeric_answer':
-            messages = self.message_to_check_if_answer_is_numeric(prompt)
+            messages = self.message_to_check_if_the_number_is_large(prompt)
         elif step == 'related_objects':
             messages = self.messages_to_extract_related_objects(prompt)
         elif step == 'needed_objects':
@@ -166,6 +164,6 @@ class QueryLLM:
 
         response = response.choices[0].message.content
         if verbose:
-            print(f'LLM Response: {response}')
+            print(f'LLM Response at step {step}: {response}')
 
         return response

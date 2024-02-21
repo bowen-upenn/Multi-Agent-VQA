@@ -32,27 +32,22 @@ def inference(device, args, test_loader):
 
             image = np.asarray(Image.open(image_path[0]).convert("RGB"))
 
-            # """ There could be three cases at the beginning
-            # 1. The question is about counting, i.e., [Numeric Answer]: verify_numeric_answer is True and match_baseline_failed is False
-            # 2. The question is about counting, but the model failed to find any object to be counted or the number maybe zero, i.e., [Answer Failed]: verify_numeric_answer is False and match_baseline_failed is True
-            # 3. The question is not about counting, i.e., [Not Numeric Answer]: verify_numeric_answer is False and match_baseline_failed is False
-            # """
-            # # check if the answer should be a numeric answer
-            # answer = VLM.query_vlm(image, question[0], step='check_numeric_answer', verbose=args['inference']['verbose'])[0]
-            # verify_numeric_answer = args['datasets']['dataset'] == 'vqa-v2' and re.search(r'\[Numeric Answer\]', answer) is not None
-            # # if the model thinks the numeric answer is zero, i.e., it couldn't find any object to be counted, it will return a failed answer
-            # match_baseline_failed = re.search(r'\[Answer Failed\]', answer) is not None or re.search(r'sorry', answer.lower()) is not None or len(answer) == 0
-            # if match_baseline_failed:
-            #     verify_numeric_answer = False   # ensure that the model does not output both [Numeric Answer] and [Answer Failed] at the same time
-            #
-            # # if the question is not about counting, first try to answer the visual question using the baseline large VLM model directly without calling multi-agents
-            # if not verify_numeric_answer and not match_baseline_failed:
-            answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])[0]
+            # first try to answer the visual question using the baseline large VLM model directly without calling multi-agents
+            answer = VLM.query_vlm(image, question[0], step='ask_directly', verbose=args['inference']['verbose'])
 
             # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
-            match_baseline_failed = re.search(r'\[Answer Failed\]', answer) is not None or re.search(r'sorry', answer.lower()) is not None or len(answer) == 0
-            verify_numeric_answer = re.search(r'\[Non-zero Numeric Answer\]', answer) is not None
+            match_baseline_failed = re.search(r'\[Answer Failed\]', answer[0]) is not None or re.search(r'sorry', answer[0].lower()) is not None or len(answer[0]) == 0
+            verify_numeric_answer = re.search(r'\[Non-zero Numeric Answer\]', answer[0]) is not None
 
+            # if the numeric value is large (>4), we need to reattempt the visual question answering task with CLIP-Count for better accuracy
+            is_numeric_answer = re.search(r'\[Numeric Answer\](.*)', answer[0])
+            if is_numeric_answer is not None:
+                numeric_answer = is_numeric_answer.group(1)
+                number_is_large = LLM.query_llm([numeric_answer], llm_model=args['llm']['llm_model'], step='check_numeric_answer', verbose=args['inference']['verbose'])
+                if re.search(r'Yes', number_is_large) is not None or re.search(r'yes', number_is_large) is not None:
+                    match_baseline_failed, verify_numeric_answer = True, True
+
+            # start reattempting the visual question answering task with multi-agents
             if match_baseline_failed:
                 if args['inference']['verbose']:
                     if verify_numeric_answer:
@@ -62,7 +57,7 @@ def inference(device, args, test_loader):
                     print(f'{Colors.WARNING}{msg}{Colors.ENDC}')
 
                 # extract object instances needed to solve the visual question answering task
-                needed_objects = LLM.query_llm(question, previous_response=answer, llm_model=args['llm']['llm_model'], step='needed_objects',
+                needed_objects = LLM.query_llm(question, previous_response=answer[0], llm_model=args['llm']['llm_model'], step='needed_objects',
                                                verify_numeric_answer=verify_numeric_answer, verbose=args['inference']['verbose'])
 
                 if verify_numeric_answer:
@@ -76,7 +71,7 @@ def inference(device, args, test_loader):
                     object_attributes = VLM.query_vlm(image, question[0], step='attributes', phrases=phrases, bboxes=boxes, verbose=args['inference']['verbose'])
 
                     # merge object descriptions as a system prompt and reattempt the visual question answering
-                    reattempt_answer = VLM.query_vlm(image, question[0], step='reattempt', obj_descriptions=object_attributes[0], prev_answer=answer,
+                    reattempt_answer = VLM.query_vlm(image, question[0], step='reattempt', obj_descriptions=object_attributes[0], prev_answer=answer[0],
                                                      verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=args['inference']['verbose'])[0]
 
                 # grade the answer. vqa-v2 test and test-dev datasets do not have ground truth answers available
@@ -86,7 +81,7 @@ def inference(device, args, test_loader):
 
                 # record responses to json file
                 response_dict = {'image_id': str(image_id[0].item()), 'image_path': image_path[0], 'question_id': str(question_id[0].item()), 'question': question[0], 'target_answer': target_answer[0],
-                                 'match_baseline_failed': match_baseline_failed, 'verify_numeric_answer': verify_numeric_answer, 'initial_answer': answer, 'reattempt_answer': reattempt_answer,
+                                 'match_baseline_failed': match_baseline_failed, 'verify_numeric_answer': verify_numeric_answer, 'initial_answer': answer[0], 'reattempt_answer': reattempt_answer,
                                  'needed_objects': needed_objects, 'grades': grades}
                 if not verify_numeric_answer:
                     response_dict['object_attributes'] = object_attributes[0]
@@ -97,11 +92,11 @@ def inference(device, args, test_loader):
             else:
                 grades = []
                 for grader_id in range(3):
-                    grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer, step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
+                    grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer[0], step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
 
                 # record responses to json file
                 response_dict = {'image_id': str(image_id[0].item()), 'image_path': image_path[0], 'question_id': str(question_id[0].item()), 'question': question[0], 'target_answer': target_answer[0],
-                                 'match_baseline_failed': match_baseline_failed, 'verify_numeric_answer': verify_numeric_answer, 'initial_answer': answer, 'grades': grades}
+                                 'match_baseline_failed': match_baseline_failed, 'verify_numeric_answer': verify_numeric_answer, 'initial_answer': answer[0], 'grades': grades}
 
             majority_vote = accumulate_grades(args, grader, grades, match_baseline_failed)
             response_dict['majority_vote'] = majority_vote

@@ -4,7 +4,7 @@ import torchvision.transforms as T
 from PIL import Image
 
 # from CLIP_Count.util.constant import SCALE_FACTOR
-SCALE_FACTOR = 80
+SCALE_FACTOR = 100
 
 preprocess = T.Compose([
         T.Resize((224, 224)),
@@ -13,7 +13,7 @@ preprocess = T.Compose([
     ])
 
 
-def query_clip_count(device, image, clip_count, prompts, verbose=False, save_heat_map=False):
+def query_clip_count(device, image, clip_count, prompts, verbose=False, save_heat_map=True):
     # Prepare the image
     image = Image.fromarray(image)
     image = preprocess(image).float().unsqueeze(0)

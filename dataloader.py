@@ -90,7 +90,7 @@ class VQAv2Dataset(Dataset):
             self.questions = json.load(f)
             self.questions = self.questions['questions']    # it is a list of dictionaries
 
-        # self.questions = [annot for annot in self.questions if annot['question_id'] == 377239000]
+        # self.questions = [annot for annot in self.questions if annot['question_id'] == 489588003]
         # print(f'len(self.questions): {len(self.questions)}', self.questions)
 
     def __len__(self):

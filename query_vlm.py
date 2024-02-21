@@ -64,10 +64,11 @@ class QueryVLM:
                       "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
                       "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
                       "(Case 2) If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
-                      "pay attention to whether the question has specified any attributes that only a subset of these objects may satisfy." \
-                      "If you can't find any of such object, answer '[Zero Numeric Answer]' and '[Answer Failed]'. If there are too many of them, answer '[Non-zero Numeric Answer]' and '[Answer Failed]'. " \
-                      "Otherwise, answer '[Numeric Answer]', step-by-step describe each object in this image that satisfy the descriptions in the question, " \
+                      "pay attention to whether the question has specified any attributes that only a subset of these objects may satisfy, and objects could be only partially visible." \
+                      "Begin your answer with '[Numeric Answer]', step-by-step describe each object in this image that satisfy the descriptions in the question, " \
                       "list each one by [Object i] where i is the index, and finally predict the number. " \
+                      "If you can't find any of such object, you should answer '[Zero Numeric Answer]' and '[Answer Failed]'. " \
+                      "If there are many of them, for example, more than three in the image, you should answer '[Non-zero Numeric Answer]' and '[Answer Failed]'. and avoid being too confident. " \
                       "(Case 3) If the answer should be an activity or a noun, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
                       "(Case 4) If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
                       "do not make a guess, but please explain why and what you need to solve the question," \
@@ -144,7 +145,8 @@ class QueryVLM:
                            "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
                            "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
                            "If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
-                           "step-by-step describe each object in this image that satisfy the descriptions in the question, list each one by [Object i] where i is the index, and finally reevaluated the number after '[Reattempted Answer]'. " \
+                           "step-by-step describe each object in this image that satisfy the descriptions in the question, list each one by [Object i] where i is the index, " \
+                           "and finally reevaluated the number after '[Reattempted Answer]'. Objects could be only partially visible." \
                            "If the answer should be an activity or a noun, say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
             else:
                 message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
@@ -226,7 +228,10 @@ class QueryVLM:
                 "Authorization": f"Bearer {self.api_key}"
             }
             response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=prompt)
-            response_json = response.json()
+            try:
+                response_json = response.json()
+            except:
+                continue
 
             # Process the response
             # Check if the response is valid and contains the expected data
@@ -234,7 +239,7 @@ class QueryVLM:
                 completion_text = response_json['choices'][0].get('message', {}).get('content', '')
 
                 if verbose:
-                    print(f'VLM Response: {completion_text}')
+                    print(f'VLM Response at step {step}: {completion_text}')
             else:
                 completion_text = ""
 
