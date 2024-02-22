@@ -47,4 +47,4 @@ inference:
   nearby_bbox_iou_threshold: 0.5
   print_every: 20
   output_response_filename: 'outputs/responses4_feb22.json'
-  save_output_response: True
+  save_output_response: False

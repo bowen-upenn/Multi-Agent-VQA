@@ -63,7 +63,7 @@ if __name__ == "__main__":
     if args['datasets']['use_num_test_data']:
         test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['num_test_data'])]
     else:
-        test_subset_idx = torch.randperm(len(test_dataset))[3600:]
+        test_subset_idx = torch.randperm(len(test_dataset))#[3600:]
         # test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
     test_subset = Subset(test_dataset, test_subset_idx)
     test_loader = DataLoader(test_subset, batch_size=1, shuffle=True, num_workers=0, drop_last=True)
