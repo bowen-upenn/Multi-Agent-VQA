@@ -45,6 +45,6 @@ inference:
   find_nearby_objects: False
   force_multi_agents: False
   nearby_bbox_iou_threshold: 0.5
-  print_every: 20
+  print_every: 50
   output_response_filename: 'outputs/responses4_feb22.json'
   save_output_response: False

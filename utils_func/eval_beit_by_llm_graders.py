@@ -32,14 +32,12 @@ def evaluate_llm(outputs):
             "question": "Is this cake homemade?"
         }
         """
-        print('idx', idx)
         grades = []
         for grader_id in range(3):
-            grades.append(LLM.query_llm(output['question'], target_answer=output['target_answer'], model_answer=output['answer'],
+            grades.append(LLM.query_llm([output['question']], target_answer=output['target_answer'], model_answer=output['answer'],
                                         step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
 
-        majority_vote = grader.accumulate_grades_simple(args, grades)
-        print('majority_vote', majority_vote)
+        _ = grader.accumulate_grades_simple(args, grades)
 
         if (idx + 1) % args['inference']['print_every'] == 0:
             accuracy, _ = grader.average_score_simple()
@@ -47,7 +45,7 @@ def evaluate_llm(outputs):
 
 
 # Load the output file
-with open('../unilm/beit3/outputs/submit_vqav2_val1000_large_finetuned_annot.json', 'r') as output_file:
+with open('../unilm/beit3/outputs/submit_gqa_val1000_large_finetuned_annot.json', 'r') as output_file:
     model_outputs = json.load(output_file)
 
 # Evaluate the output file

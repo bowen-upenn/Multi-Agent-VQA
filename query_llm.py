@@ -160,12 +160,15 @@ class QueryLLM:
         else:
             raise ValueError(f'Invalid step: {step}')
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-        )
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+            )
 
-        response = response.choices[0].message.content
+            response = response.choices[0].message.content
+        except:
+            response = "Invalid response. "
         if verbose:
             print(f'LLM Response at step {step}: {response}')
 
