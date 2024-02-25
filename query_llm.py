@@ -3,7 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 import json
-# import openai
+import openai
 from openai import OpenAI
 import random
 import cv2
@@ -12,10 +12,13 @@ from utils import *
 
 
 class QueryLLM:
-    def __init__(self, args):
-        with open("openai_key.txt", "r") as api_key_file:
-            self.api_key = api_key_file.read()
-            self.args = args
+    def __init__(self, args, openai_key=None):
+        self.args = args
+        if openai_key is not None:
+            self.api_key = openai_key
+        else:
+            with open("openai_key.txt", "r") as api_key_file:
+                self.api_key = api_key_file.read()
 
 
     def message_to_check_if_the_number_is_large(self, answer):

@@ -6,8 +6,6 @@ import json
 import re
 import os
 
-from groundingdino.util.inference import annotate
-
 
 class Grader:
     def __init__(self):
@@ -33,6 +31,81 @@ class Grader:
             'count_total': self.count_total
         }
         return accuracy_baseline, accuracy, stat
+
+    def average_score_simple(self):
+        """Calculate and return the average score of the grades."""
+        if self.count_total == 0:
+            return 0, 0, None  # Return 0 if there are no grades to avoid division by zero
+
+        accuracy = self.count_correct / self.count_total
+
+        stat = {
+            'count_correct': self.count_correct,
+            'count_incorrect': self.count_incorrect,
+            'count_total': self.count_total
+        }
+        return accuracy, stat
+
+    def accumulate_grades(self, args, grades, match_baseline_failed):
+        # accumulate the grades
+        count_match_correct = 0
+        for grade in grades:
+            if re.search(r'\[Correct\]', grade):
+                count_match_correct += 1
+        match_correct = True if count_match_correct >= 2 else False  # majority vote: if at least 2 out of 3 graders agree, the answer is correct
+
+        if match_correct:
+            majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
+            if args['inference']['verbose']:
+                print(f'{Colors.OKBLUE}{majority_vote}{Colors.ENDC}')
+        else:
+            majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
+            if args['inference']['verbose']:
+                print(f'{Colors.FAIL}{majority_vote}{Colors.ENDC}')
+
+        self.count_total += 1
+        if not match_baseline_failed:  # if the baseline does not fail
+            if match_correct:
+                self.count_correct_baseline += 1
+                self.count_correct += 1  # no need to reattempt the answer
+            else:
+                self.count_incorrect_baseline += 1
+                self.count_incorrect += 1  # still didn't reattempt the answer in this case
+        else:  # if the baseline fails, reattempt the answer
+            self.count_incorrect_baseline += 1
+            if match_correct:
+                self.count_correct += 1
+            else:
+                self.count_incorrect += 1
+
+        return majority_vote
+
+    def accumulate_grades_simple(self, args, grades):
+        # accumulate the grades
+        count_match_correct = 0
+        for grade in grades:
+            if re.search(r'\[Correct\]', grade):
+                count_match_correct += 1
+        match_correct = True if count_match_correct >= 2 else False  # majority vote: if at least 2 out of 3 graders agree, the answer is correct
+
+        if match_correct:
+            majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
+            if args['inference']['verbose']:
+                print(f'{Colors.OKBLUE}{majority_vote}{Colors.ENDC}')
+        else:
+            majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
+            if args['inference']['verbose']:
+                print(f'{Colors.FAIL}{majority_vote}{Colors.ENDC}')
+
+        self.count_total += 1
+        if match_correct:
+            self.count_correct_baseline += 1
+            self.count_correct += 1  # no need to reattempt the answer
+        else:
+            self.count_incorrect_baseline += 1
+            self.count_incorrect += 1  # still didn't reattempt the answer in this case
+
+        return majority_vote
 
 
 def calculate_iou_batch(a, b):
@@ -104,6 +177,8 @@ def show_anns(anns):
 
 
 def plot_grounding_dino_bboxes(image_source, boxes, logits, phrases, filename):
+    from groundingdino.util.inference import annotate
+
     annotated_frame = annotate(image_source=image_source, boxes=boxes, logits=logits, phrases=phrases)
     annotated_frame = annotated_frame[:, :, [2, 1, 0]]  # BGR2RGB
     plt.imsave('test_images/bboxes' + filename + '.jpg', annotated_frame)
@@ -117,40 +192,6 @@ class Colors:
     FAIL = '\033[91m'    # Red
     ENDC = '\033[0m'     # Reset color
 
-
-def accumulate_grades(args, grader, grades, match_baseline_failed):
-    # accumulate the grades
-    count_match_correct = 0
-    for grade in grades:
-        if re.search(r'\[Correct\]', grade):
-            count_match_correct += 1
-    match_correct = True if count_match_correct >= 2 else False  # majority vote: if at least 2 out of 3 graders agree, the answer is correct
-
-    if match_correct:
-        majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
-        if args['inference']['verbose']:
-            print(f'{Colors.OKBLUE}{majority_vote}{Colors.ENDC}')
-    else:
-        majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
-        if args['inference']['verbose']:
-            print(f'{Colors.FAIL}{majority_vote}{Colors.ENDC}')
-
-    grader.count_total += 1
-    if not match_baseline_failed:  # if the baseline does not fail
-        if match_correct:
-            grader.count_correct_baseline += 1
-            grader.count_correct += 1  # no need to reattempt the answer
-        else:
-            grader.count_incorrect_baseline += 1
-            grader.count_incorrect += 1  # still didn't reattempt the answer in this case
-    else:  # if the baseline fails, reattempt the answer
-        grader.count_incorrect_baseline += 1
-        if match_correct:
-            grader.count_correct += 1
-        else:
-            grader.count_incorrect += 1
-
-    return majority_vote
 
 def load_answer_list(file_path):
     """

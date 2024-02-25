@@ -98,7 +98,7 @@ def inference(device, args, test_loader):
                 response_dict = {'image_id': str(image_id[0].item()), 'image_path': image_path[0], 'question_id': str(question_id[0].item()), 'question': question[0], 'target_answer': target_answer[0],
                                  'match_baseline_failed': match_baseline_failed, 'verify_numeric_answer': verify_numeric_answer, 'initial_answer': answer[0], 'grades': grades}
 
-            majority_vote = accumulate_grades(args, grader, grades, match_baseline_failed)
+            majority_vote = grader.accumulate_grades(args, grades, match_baseline_failed)
             response_dict['majority_vote'] = majority_vote
 
             if (batch_count + 1) % args['inference']['print_every'] == 0:
