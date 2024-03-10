@@ -3,4 +3,6 @@ myenv/
 openai_key.txt
 test_images/
 outputs/
+LLM_api_keys/
+LLM_api_test/
 *.jpg

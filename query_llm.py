@@ -9,11 +9,13 @@ import random
 import cv2
 import concurrent.futures
 from utils import *
-
+# gemini
+from vertexai.preview.generative_models import GenerativeModel
 
 class QueryLLM:
     def __init__(self, args, openai_key=None):
         self.args = args
+        self.llm_type = args["model"]
         if openai_key is not None:
             self.api_key = openai_key
         else:
@@ -54,17 +56,17 @@ class QueryLLM:
         else:
             messages = [
                 {"role": "system", "content": "Based on the response provided by a large vision-language model (VLM) for a visual question answering task, "
-                              "it appears that the model encountered difficulties in generating an accurate answer for the question: '" + question + "'. "
-                              "The model has provided an explanation for its inability to respond correctly, which might suggest that certain objects "
-                              "important to answer the question were not detected in the image. "
-                              "Your task is to analyze the model's explanation carefully to identify those objects or attributes. "
-                              "For questions asking about specific objects (e.g., 'What is the color of the car?'), list the objects 'Car' directly. "
-                              "For questions seeking objects with certain attributes (e.g., 'Which object has a bright color?'), list the attributes with the word 'objects' (e.g., 'bright-colored objects'). "
-                              "Make sure to include the subject and the object of the question, as they must be critical to answer the question, but "
-                              "ignore objects irrelevant to the question even if they are mentioned in the model explanation. "
-                              "This nuanced approach will guide the deployment of an additional object detection model to locate these missing objects or attributes. "
-                              "If you find no objects from the explanation, you can instead extract the objects mentioned in the question. "
-                              "Always list the objects in the following format in a single line: 'Object1 . Object2 . Object3 .'"},
+                                              "it appears that the model encountered difficulties in generating an accurate answer for the question: '" + question + "'. "
+                                              "The model has provided an explanation for its inability to respond correctly, which might suggest that certain objects "
+                                              "important to answer the question were not detected in the image. "
+                                              "Your task is to analyze the model's explanation carefully to identify those objects or attributes. "
+                                              "For questions asking about specific objects (e.g., 'What is the color of the car?'), list the objects 'Car' directly. "
+                                              "For questions seeking objects with certain attributes (e.g., 'Which object has a bright color?'), list the attributes with the word 'objects' (e.g., 'bright-colored objects'). "
+                                              "Make sure to include the subject and the object of the question, as they must be critical to answer the question, but "
+                                              "ignore objects irrelevant to the question even if they are mentioned in the model explanation. "
+                                              "This nuanced approach will guide the deployment of an additional object detection model to locate these missing objects or attributes. "
+                                              "If you find no objects from the explanation, you can instead extract the objects mentioned in the question. "
+                                              "Always list the objects in the following format in a single line: 'Object1 . Object2 . Object3 .'"},
                 {"role": "user", "content": "Here is the explanation from the VLM regarding its failure to answer the question correctly: '" + previous_response + "',"
                                             "and the visual question to be answered is: '" + question + "'."}
             ]

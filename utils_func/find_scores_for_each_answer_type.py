@@ -28,7 +28,8 @@ def process_responses(file_path):
 
 # List of response files
 response_files = [
-    '../outputs/responses4_feb22.json',
+    # '../outputs/responses1.json',
+    '../outputs/responses4_feb26_no_cot.json',
     # '../outputs/responses1.json',
     # '../outputs/responses2.json',
     # '../outputs/responses3.json',

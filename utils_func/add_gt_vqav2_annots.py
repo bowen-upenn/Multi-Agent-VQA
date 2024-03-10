@@ -2,7 +2,8 @@ import json
 from tqdm import tqdm
 
 # Load the model's output file
-with open('../unilm/beit3/outputs/submit_vqav2_rest_val_large_itc.json', 'r') as model_output_file:
+with open('../unilm/vlmo/result/vqa_submit_vlmo_large_patch16_384_coc.json', 'r') as model_output_file:
+# with open('../unilm/beit3/outputs/submit_vqav2_rest_val_large_itc.json', 'r') as model_output_file:
     model_outputs = json.load(model_output_file)
 
 # Load the ground truth annotations
@@ -37,5 +38,6 @@ for model_output in tqdm(model_outputs):
         print("question id not found in answers", question_id)
 
 # Write the updated outputs back to the file
-with open('../unilm/beit3/outputs/submit_vqav2_rest_val_large_itc_annot.json', 'w') as updated_output_file:
+with open('../unilm/vlmo/result/vqa_submit_vlmo_large_patch16_384_coc_annot.json', 'w') as updated_output_file:
+# with open('../unilm/beit3/outputs/submit_vqav2_rest_val_large_itc_annot.json', 'w') as updated_output_file:
     json.dump(model_outputs, updated_output_file, indent=4)

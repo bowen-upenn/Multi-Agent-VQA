@@ -37,15 +37,16 @@ def inference(device, args, test_loader):
 
             # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
             match_baseline_failed = re.search(r'\[Answer Failed\]', answer[0]) is not None or re.search(r'sorry', answer[0].lower()) is not None or len(answer[0]) == 0
-            verify_numeric_answer = re.search(r'\[Non-zero Numeric Answer\]', answer[0]) is not None
-
-            # if the numeric value is large (>4), we need to reattempt the visual question answering task with CLIP-Count for better accuracy
-            is_numeric_answer = re.search(r'\[Numeric Answer\](.*)', answer[0])
-            if is_numeric_answer is not None:
-                numeric_answer = is_numeric_answer.group(1)
-                number_is_large = LLM.query_llm([numeric_answer], llm_model=args['llm']['llm_model'], step='check_numeric_answer', verbose=args['inference']['verbose'])
-                if re.search(r'Yes', number_is_large) is not None or re.search(r'yes', number_is_large) is not None:
-                    match_baseline_failed, verify_numeric_answer = True, True
+            verify_numeric_answer = False
+            # verify_numeric_answer = re.search(r'\[Non-zero Numeric Answer\]', answer[0]) is not None
+            #
+            # # if the numeric value is large (>4), we need to reattempt the visual question answering task with CLIP-Count for better accuracy
+            # is_numeric_answer = re.search(r'\[Numeric Answer\](.*)', answer[0])
+            # if is_numeric_answer is not None:
+            #     numeric_answer = is_numeric_answer.group(1)
+            #     number_is_large = LLM.query_llm([numeric_answer], llm_model=args['llm']['llm_model'], step='check_numeric_answer', verbose=args['inference']['verbose'])
+            #     if re.search(r'Yes', number_is_large) is not None or re.search(r'yes', number_is_large) is not None:
+            #         match_baseline_failed, verify_numeric_answer = True, True
 
             # start reattempting the visual question answering task with multi-agents
             if match_baseline_failed:
@@ -72,7 +73,7 @@ def inference(device, args, test_loader):
 
                     # merge object descriptions as a system prompt and reattempt the visual question answering
                     reattempt_answer = VLM.query_vlm(image, question[0], step='reattempt', obj_descriptions=object_attributes[0], prev_answer=answer[0],
-                                                     verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=args['inference']['verbose'])[0]
+                                                     needed_objects=needed_objects, verbose=args['inference']['verbose'])[0]
 
                 # grade the answer. vqa-v2 test and test-dev datasets do not have ground truth answers available
                 grades = []

@@ -45,7 +45,9 @@ def evaluate_llm(outputs):
 
 
 # Load the output file
-with open('../unilm/beit3/outputs/submit_gqa_val1000_large_finetuned_annot.json', 'r') as output_file:
+with open('../unilm/vlmo/result/vqa_submit_vlmo_large_patch16_384_coc_annot.json', 'r') as output_file:
+# with open('../unilm/vlmo/result/vqa_submit_vlmo_large_patch16_480_vq_annot.json', 'r') as output_file:
+# with open('../unilm/beit3/outputs/submit_gqa_val1000_large_finetuned_annot.json', 'r') as output_file:
     model_outputs = json.load(output_file)
 
 # Evaluate the output file
