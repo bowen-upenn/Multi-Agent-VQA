@@ -59,16 +59,51 @@ class QueryVLM:
 
         return image_bytes
 
+    def messages_to_answer_directly_gemini(self, question):
+        if self.args['datasets']['dataset'] == 'vqa-v2':
+            message = "You are performing a Visual Question Answering task." \
+                      "Given the image and the question '" + question + \
+                      "', explain what the question wants to ask, what objects or objects with specific attributes" \
+                      "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
+                      "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image. " \
+                      "Begin your final answer with the notation '[Answer]'. " \
+                      "The correct answer could be an open-ended response, a 'yes/no' or a number. " \
+                      "(Case 1) If you believe your answer is not an open-ended response, not a number, and should fall into the category of 'yes/no', say 'yes/no' after '[Answer]'. " \
+                      "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
+                      "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
+                      "(Case 2) If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
+                      "pay attention to whether the question has specified any attributes that only a subset of these objects may satisfy, and objects could be only partially visible." \
+                      "Begin your answer with '[Numeric Answer]', step-by-step describe each object in this image that satisfy the descriptions in the question, " \
+                      "list each one by [Object i] where i is the index, and finally predict the number. " \
+                      "If you can't find any of such object, you should answer '[Zero Numeric Answer]' and '[Answer Failed]'. " \
+                      "If there are many of them, for example, more than three in the image, you should answer '[Non-zero Numeric Answer]' and '[Answer Failed]'. and avoid being too confident. " \
+                      "(Case 3) If the answer should be an activity, a noun or an adjective, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
+                      "(Case 4) If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
+                      "do not make a guess, but please explain why and what you need to solve the question," \
+                      "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'. Keep your answers short."
+        else:
+            message = "You are performing a Visual Question Answering task." \
+                      "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
+                      "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
+                      "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image." \
+                      "Begin your final answer with the notation '[Answer]'. " \
+                      "If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
+                      "do not make a guess, but please explain why and what you need to solve the question," \
+                      "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'."
+        return message
+
+
+
     def messages_to_answer_directly(self, question):
         if self.args['datasets']['dataset'] == 'vqa-v2':
             # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
-            message = "Given the image, answer the question '" + question + "'. Begin your answer with '[Answer]'."\
-                      "If you think you can't answer the question directly, do not make a guess" \
-                      "Say what you need to solve the question and use the notation '[Answer Failed]' instead of '[Answer]'. " \
-                      "If the question asks you to count the number of an object, begin your answer with '[Numeric Answer]'." \
-                      "If you can't find any of such object, you should answer '[Zero Numeric Answer]' and '[Answer Failed]'. " \
-                      "If there are many of them, you should answer '[Non-zero Numeric Answer]' and '[Answer Failed]'." \
-                      "Keep your answers short. "
+            # message = "Given the image, answer the question '" + question + "'. Begin your answer with '[Answer]'."\
+            #           "If you think you can't answer the question directly, do not make a guess" \
+            #           "Say what you need to solve the question and use the notation '[Answer Failed]' instead of '[Answer]'. " \
+            #           "If the question asks you to count the number of an object, begin your answer with '[Numeric Answer]'." \
+            #           "If you can't find any of such object, you should answer '[Zero Numeric Answer]' and '[Answer Failed]'. " \
+            #           "If there are many of them, you should answer '[Non-zero Numeric Answer]' and '[Answer Failed]'." \
+            #           "Keep your answers short. "
 
             # message = "You are performing a Visual Question Answering task." \
             #           "Given the image and the question '" + question + "', explain what the question wants to ask, what objects or objects with specific attributes" \
@@ -132,11 +167,11 @@ class QueryVLM:
             message = "Describe the " + phrase + " in each image in one sentence that can help you answer the question '" + question + "' and count the number of " + phrase + " in the image. "
         else:
             # We expect each object to offer a different perspective to solve the question
-            message = "Describe the attributes and the name of the object related to answer the question '" + question + "' in one sentence."
-                # message = "Describe the attributes and the name of the object in the image in one sentence, " \
-            #           "including visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
-            #           "and semantic attributes like type and current status if applicable. " \
-            #           "Think about what objects you should look at to answer the question '" + question + "' in this specific image, and only focus on these objects." \
+            # message = "Describe the attributes and the name of the object related to answer the question '" + question + "' in one sentence."
+            message = "Describe the attributes and the name of the object in the image in one sentence, " \
+                  "including visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
+                  "and semantic attributes like type and current status if applicable. " \
+                  "Think about what objects you should look at to answer the question '" + question + "' in this specific image, and only focus on these objects." \
 
             if phrase is not None:
                 message += "You need to focus on the " + phrase + " and nearby objects. "
@@ -145,29 +180,29 @@ class QueryVLM:
 
 
     def messages_to_reattempt(self, question, obj_descriptions, prev_answer):
-        message = "After a previous attempt to answer the question '" + question + "', the response was not successful, " \
-                  "Here is the feedback from that attempt [Previous Failed Answer: " + prev_answer + "]. To address this, we've identified additional objects within the image: "                                                                                                                                                                                                                  "To address this, we've identified additional objects within the image. Their descriptions are as follows: "
-        # message = "After a previous attempt to answer the question '" + question + "' given the image, the response was not successful, " \
-        #           "highlighting the need for more detailed object detection and analysis. Here is the feedback from that attempt [Previous Failed Answer: " + prev_answer + "] " \
-        #           "To address this, we've identified additional objects within the image. Their descriptions are as follows: "
+        # message = "After a previous attempt to answer the question '" + question + "', the response was not successful, " \
+        #           "Here is the feedback from that attempt [Previous Failed Answer: " + prev_answer + "]. To address this, we've identified additional objects within the image: "                                                                                                                                                                                                                  "To address this, we've identified additional objects within the image. Their descriptions are as follows: "
+        message = "After a previous attempt to answer the question '" + question + "' given the image, the response was not successful, " \
+                  "highlighting the need for more detailed object detection and analysis. Here is the feedback from that attempt [Previous Failed Answer: " + prev_answer + "] " \
+                  "To address this, we've identified additional objects within the image. Their descriptions are as follows: "
 
         for i, obj in enumerate(obj_descriptions):
             message += "[Object " + str(i) + "] " + obj + "; "
 
         if self.args['datasets']['dataset'] == 'vqa-v2':
             # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
-            message += "Now, please reattempt to answer the visual question '" + question + "'. Begin your answer with '[Reattempted Answer]'. "
-            # message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. " \
-            #            "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
-            #            "Summarize all the information you have, and then begin your final answer with '[Reattempted Answer]'." \
-            #            "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
-            #            "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Reattempted Answer]'. " \
-            #            "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
-            #            "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
-            #            "If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
-            #            "step-by-step describe each object in this image that satisfy the descriptions in the question, list each one by [Object i] where i is the index, " \
-            #            "and finally reevaluated the number after '[Reattempted Answer]'. Objects could be only partially visible." \
-            #            "If the answer should be an activity or a noun, say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
+            # message += "Now, please reattempt to answer the visual question '" + question + "'. Begin your answer with '[Reattempted Answer]'. "
+            message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. " \
+                       "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
+                       "Summarize all the information you have, and then begin your final answer with '[Reattempted Answer]'." \
+                       "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
+                       "If you believe your answer falls into the category of 'yes/no' or a number, say 'yes/no' or the number after '[Reattempted Answer]'. " \
+                       "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
+                       "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
+                       "If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
+                       "step-by-step describe each object in this image that satisfy the descriptions in the question, list each one by [Object i] where i is the index, " \
+                       "and finally reevaluated the number after '[Reattempted Answer]'. Objects could be only partially visible." \
+                       "If the answer should be an activity or a noun, say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
         else:
             message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \
                        "Given these additional object descriptions that the model previously missed, please re-attempt to answer the visual question '" + question + "' step by step. " \
@@ -179,8 +214,12 @@ class QueryVLM:
         responses = []
 
         if step == 'reattempt' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
-            response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
-                                                 verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
+            if self.vlm_type=="gemini":
+                response = self._query_gemini_pro_vision(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
+                                                     verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
+            else:
+                response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
+                                                     verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
             return [response]
 
         # query on a single object
@@ -281,7 +320,7 @@ class QueryVLM:
         vertexai_image = vertexai_Image.from_bytes(byte_image)
 
         if step == 'ask_directly':
-            messages = self.messages_to_answer_directly(question)
+            messages = self.messages_to_answer_directly_gemini(question)
             max_tokens = 400
         elif step == 'check_numeric_answer':
             messages = self.message_to_check_if_answer_is_numeric(question)
@@ -301,6 +340,7 @@ class QueryVLM:
             raise ValueError('Invalid step')
 
         # Retry if GPT response is like "I'm sorry, I cannot assist with this request"
+        completion_text = ""
         for _ in range(3):
             # Due to the strong performance of the vision model, we omit multiple queries and majority vote to reduce costs
             gemini_contents = [messages, vertexai_image]
@@ -309,14 +349,16 @@ class QueryVLM:
                 generation_config={"max_output_tokens": max_tokens},
             )
             # Process the response
-            completion_text = response.text
+            try:
+                completion_text = response.text
+            except:
+                if verbose:
+                    print(f'Gemini VLM Response at step {step}')
+                continue
+            if verbose:
+                print(f'Gemini VLM Response at step {step}: {completion_text}')
 
             if step == 'ask_directly' or (not re.search(r'sorry|cannot assist|can not assist|can\'t assist', completion_text, re.IGNORECASE)):
                 break
 
-        # [zhijunz] TEMP, set for debug
-        print("=====messages=====")
-        print(messages)
-        print("=======completion_test========")
-        print(completion_text)
         return completion_text

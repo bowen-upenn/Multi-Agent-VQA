@@ -37,18 +37,19 @@ def inference(device, args, test_loader):
 
             # if the answer failed, reattempt the visual question answering task with additional information assisted by the object detection model
             match_baseline_failed = re.search(r'\[Answer Failed\]', answer[0]) is not None or re.search(r'sorry', answer[0].lower()) is not None or len(answer[0]) == 0
-            verify_numeric_answer = False
-            # verify_numeric_answer = re.search(r'\[Non-zero Numeric Answer\]', answer[0]) is not None
-            #
-            # # if the numeric value is large (>4), we need to reattempt the visual question answering task with CLIP-Count for better accuracy
-            # is_numeric_answer = re.search(r'\[Numeric Answer\](.*)', answer[0])
-            # if is_numeric_answer is not None:
-            #     numeric_answer = is_numeric_answer.group(1)
-            #     number_is_large = LLM.query_llm([numeric_answer], llm_model=args['llm']['llm_model'], step='check_numeric_answer', verbose=args['inference']['verbose'])
-            #     if re.search(r'Yes', number_is_large) is not None or re.search(r'yes', number_is_large) is not None:
-            #         match_baseline_failed, verify_numeric_answer = True, True
+            # verify_numeric_answer = False # uncomment for ablation study on the object-counting agent or on multi-agents
+            verify_numeric_answer = re.search(r'\[Non-zero Numeric Answer\]', answer[0]) is not None
+
+            # if the numeric value is large (>4), we need to reattempt the visual question answering task with CLIP-Count for better accuracy
+            is_numeric_answer = re.search(r'\[Numeric Answer\](.*)', answer[0])
+            if is_numeric_answer is not None:
+                numeric_answer = is_numeric_answer.group(1)
+                number_is_large = LLM.query_llm([numeric_answer], llm_model=args['llm']['llm_model'], step='check_numeric_answer', verbose=args['inference']['verbose'])
+                if re.search(r'Yes', number_is_large) is not None or re.search(r'yes', number_is_large) is not None:
+                    match_baseline_failed, verify_numeric_answer = True, True
 
             # start reattempting the visual question answering task with multi-agents
+            # match_baseline_failed = False # uncomment for ablation study on multi-agents
             if match_baseline_failed:
                 if args['inference']['verbose']:
                     if verify_numeric_answer:
@@ -62,6 +63,7 @@ def inference(device, args, test_loader):
                                                verify_numeric_answer=verify_numeric_answer, verbose=args['inference']['verbose'])
 
                 if verify_numeric_answer:
+                    # reattempt_answer = answer[0]
                     reattempt_answer = query_clip_count(device, image, clip_count, prompts=needed_objects, verbose=args['inference']['verbose'])
                 else:
                     # query grounded sam on the input image. the 'boxes' is a tensor of shape (N, 4) where N is the number of object instances in the image,

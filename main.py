@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     # Command-line argument parsing
     parser = argparse.ArgumentParser(description='Command line arguments')
-    parser.add_argument('--vlm_model', type=str, default="gpt4v", help='Set VLM model (gpt4v, gemini)')
+    parser.add_argument('--vlm_model', type=str, default="gpt4", help='Set VLM model (gpt4, gemini)')
     parser.add_argument('--dataset', type=str, default=None, help='Set dataset (gqa, vqa-v2)')
     parser.add_argument('--split', type=str, default=None, help='Set dataset gqa: val, val-subset, test. vqa-v2: val, rest-val, val1000, test-dev, test-std')
     parser.add_argument('--verbose', dest='verbose', action='store_true', help='Set verbose to True')
@@ -75,12 +75,12 @@ if __name__ == "__main__":
 
     torch.manual_seed(0)
     # [zhijunz] TEMP, set for debug
-    args['datasets']['use_num_test_data'] = 3
+    # args['datasets']['use_num_test_data'] = 3
     if args['datasets']['use_num_test_data']:
         test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['num_test_data'])]
     else:
-        test_subset_idx = torch.randperm(len(test_dataset))[3600:]
-        # test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
+        # test_subset_idx = torch.randperm(len(test_dataset))[3600:]
+        test_subset_idx = torch.randperm(len(test_dataset))[:int(args['datasets']['percent_test'] * len(test_dataset))]
     test_subset = Subset(test_dataset, test_subset_idx)
     test_loader = DataLoader(test_subset, batch_size=1, shuffle=True, num_workers=0, drop_last=True)
     print('num of train, test:', 0, len(test_subset))
