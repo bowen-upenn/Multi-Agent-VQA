@@ -6,6 +6,9 @@ We propose an adaptive multi-agent system, named **Multi-Agent VQA**, to overcom
 Unlike existing approaches, our study focuses on the system's performance without fine-tuning it on specific VQA datasets, making it more practical and robust in the open world. 
 We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. 
 
+## Disclaimer
+This repository is under development and at present, GPT-4 is the only large vision-language model that our system supports. Although you can find codes for other models like Gemini in this repository, they are either incomplete or haven't been thoroughly tested yet. In this README, you will find instructions on all the available functionalities in the paper and they should work well.
+
 ## TODOs
 - [ ] 1. Integrate [Google Gemini Pro Vision](https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-pro-vision?pli=1) into our system (ongoing).
 - [ ] 2. Integrate [LLaVA](https://llava-vl.github.io/), [CogVLM](https://github.com/THUDM/CogVLM), and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets.
@@ -91,4 +94,25 @@ datasets/
             ...
         gqasubset1000.json
 ```
+
+## Quick Start
+- Step 1. Follow instructions on [Grounded SAM](https://github.com/IDEA-Research/Grounded-Segment-Anything/tree/fe24c033820adffff66ac0eb191828542e8afe5e) to clone the repository, download the pretrained weights ```groundingdino_swint_ogc.pth```, and put it under the path ```Grounded-Segment-Anything/```. Our [Dockerfile](Dockerfile) and [Makefile](Makefile) are inherited from theirs, so there is no need to install the Grounded SAM again.
+
+- Step 2. Follow instructions on [CLIP-Count](https://github.com/songrise/CLIP-Count/tree/43b496978e281bfae8d2c5b4b691c3910fe70a7c) to clone the repository, download the pretrained weights, rename it as ```clipcount_pretrained.ckpt```, and put it under the path ```CLIP_Count/ckpt/```. Our Dockerfile should have already taken into account its requirements.
+
+- Step 3. Follow instructions on [OpenAI](https://platform.openai.com/docs/quickstart?context=python) to set up your OpenAI API, add a ```openai_key.txt``` file to your top directory, and paste your [API key](https://platform.openai.com/api-keys) into your txt file.
+  
+- Step 4. We allow command-line argparser for the following arguments:
+    - ```--vlm_model``` to select the VLM for inference: ```gpt4``` or ```gemini```.
+    - ```---dataset``` to select the dataset: ```gqa``` or ```vqa-v2```.
+    - ```--split``` to select the dataset split: ```val-subset``` for GQA or ```rest-val``` for VQA-v2.
+    - ```--verbose``` to print detailed data information and model responses during the inference.
+ 
+  For example, you can run 
+
+      python main.py --vlm_model gpt4 --dataset vqa-v2 --split rest-val --verbose
+
+  in the command line to start the inference code. All the other hyper-parameters can be set at [config.yaml](config.yaml). Results will be saved under [outputs/](outputs/)
+
+
 
