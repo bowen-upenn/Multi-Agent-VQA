@@ -12,7 +12,7 @@ This repository is under development and at present, GPT-4 is the only large vis
 ## TODOs
 - [ ] 1. Integrate [Google Gemini Pro Vision](https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-pro-vision?pli=1) into our system (ongoing).
 - [ ] 2. Integrate [LLaVA](https://llava-vl.github.io/), [CogVLM](https://github.com/THUDM/CogVLM), and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets.
-- [ ] 3. Integrate [YOLO-World](https://github.com/AILab-CVC/YOLO-World) as the object-detection agent into our system.
+- [ ] 3. Explore other tools available. For example, we could use [YOLO-World](https://github.com/AILab-CVC/YOLO-World) as the object-detection agent in our system.
 - [ ] 4. Experiment on more [Visual Question Answering datasets](https://paperswithcode.com/task/visual-question-answering)
 
 ## Citation
