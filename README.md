@@ -34,5 +34,61 @@ There are two options for setting up the required environment.
       make run
 
 ## Dataset
-We evaluate our method on the widely adopted [VQA-v2](https://paperswithcode.com/dataset/visual-question-answering-v2-0) and [GQA](https://cs.stanford.edu/people/dorarad/gqa/) datasets for the Visual Question Answering task.
+Due to the costs and time requirements of GPT-4V API,  we have to use a subset of the data to evaluate the performance. The test set of VQA-v2 is not publicly available and requires exact matches of the answers, making open-world answers and LLM-based graders inapplicable. We instead adopt the VQA-v2 rest-val dataset, the validation dataset in [BEiT-3](https://github.com/microsoft/unilm/tree/master/beit3) and [VLMo](https://github.com/bowen-upenn/unilm/tree/master/vlmo) that was never used for training. It contains 5228 unique image-question pairs. For GQA, we take the same 1000 validation samples used in [ELEGANT](https://arxiv.org/pdf/2310.01356.pdf) for testing.
+
+- To evaluate our method on the [VQA-v2](https://paperswithcode.com/dataset/visual-question-answering-v2-0) dataset, please follow BEiT-3's [instruction](https://github.com/microsoft/unilm/blob/master/beit3/get_started/get_started_for_vqav2.md) to download and prepare the data.
+
+According to the instruction, you need to modify the source codes and generate the index JSON files for the dataset, so we provided the modified codes in this forked [repository](https://github.com/bowen-upenn/unilm/tree/master). Make sure you can get the file ``vqa.rest_val.jsonl``.
+
+Our codes accept the data formats in ```v2_OpenEnded_mscoco_train2014_questions.json``` (the question file) and ```v2_mscoco_train2014_annotations``` (the annotation file), so we provide the code [utils_func/find_matched_rest_val.py](utils_func/find_matched_rest_val.py) to convert ``vqa.rest_val.jsonl`` into [```v2_OpenEnded_mscoco_rest_val2014_questions```](https://cs.stanford.edu/people/dorarad/gqa/download.html) and [```v2_mscoco_rest_val2014_annotations.json```](https://drive.google.com/file/d/1t0-Plgv6b65L1LfVHP62iwrULorgEn4U/view?usp=sharing). **You can also download them directly by clicking on their names here.**
+
+You should organize the dataset at the end as the following structure, but we are not going to use any training or testing splits.
+```
+datasets/
+    coco/
+        train2014/            
+            COCO_train2014_000000000009.jpg                
+            ...
+        val2014/              
+            COCO_val2014_000000000042.jpg
+            ...  
+        test2015/              
+            COCO_test2015_000000000001.jpg
+            ...
+        answer2label.txt
+        vqa.train.jsonl
+        vqa.val.jsonl
+        vqa.trainable_val.jsonl
+        vqa.rest_val.jsonl
+        vqa.test.jsonl
+        vqa.test-dev.jsonl      
+        vqa/
+            v2_OpenEnded_mscoco_train2014_questions.json
+            v2_OpenEnded_mscoco_val2014_questions.json
+            v2_OpenEnded_mscoco_test2015_questions.json
+            v2_OpenEnded_mscoco_test-dev2015_questions.json
+            v2_OpenEnded_mscoco_rest_val2014_questions
+            v2_mscoco_train2014_annotations.json
+            v2_mscoco_val2014_annotations.json
+            v2_mscoco_rest_val2014_annotations.json
+```
+
+Like what we did in our [config.yaml](config.yaml), you can add a soft link to your own ```datasets/``` folder 
+
+    cd ~/tmp
+    ln -s /path/to/your/datasets/ .
+        
+Otherwise, please remove the /tmp/ header from all paths in the provided [config.yaml](config.yaml).
   
+- To evaluate our method on the [GQA](https://cs.stanford.edu/people/dorarad/gqa/) dataset, download the [images](https://cs.stanford.edu/people/dorarad/gqa/download.html) and the annotation file [```gqasubset1000.json```](https://drive.google.com/file/d/1SAOrdtjuYqBmY8OpUILMsaggQutaA-lE/view?usp=sharing). Again, we take the same 1000 validation samples used in [ELEGANT](https://arxiv.org/pdf/2310.01356.pdf) for a fair comparison.
+
+You should organize the dataset at the end as the following structure.
+```
+datasets/
+    gqa/
+        images/
+            1000.jpg
+            ...
+        gqasubset1000.json
+```
+
