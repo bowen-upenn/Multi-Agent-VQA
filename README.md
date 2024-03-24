@@ -26,19 +26,19 @@ TODO
 
 ## Environment
 There are two options for setting up the required environment.
-- Python virtual environment: Please check [requirements.txt](requirements.txt). You can run the following commands to create a virtual environment and install all the requirements:
-    
-      python -m venv myenv
-      source myenv/bin/activate
-      pip install -r requirements.txt
-  
-- Docker: We have provided you with the [Dockerfile](Dockerfile) and the corresponding [Makefile](Makefile) for the Docker. To build the Docker image from the base image [```pytorch:2.2.0-cuda12.1-cudnn8-runtime```](https://hub.docker.com/r/pytorch/pytorch/tags), run
+- Docker (recommended): We have provided you with the [Dockerfile](Dockerfile) and the corresponding [Makefile](Makefile) for the Docker. To build the Docker image from the base image [```pytorch:2.2.0-cuda12.1-cudnn8-runtime```](https://hub.docker.com/r/pytorch/pytorch/tags), run
 
       make build-image
   
   To run the Docker container, modify the mount path in the [Makefile](Makefile) and then run
 
       make run
+
+- Python virtual environment: Please check [requirements.txt](requirements.txt). You can run the following commands to create a virtual environment and install all the requirements:
+    
+      python -m venv myenv
+      source myenv/bin/activate
+      pip install -r requirements.txt
 
 ## Dataset
 Due to the costs and time requirements of GPT-4V API,  we have to use a subset of the data to evaluate the performance. The test set of VQA-v2 is not publicly available and requires exact matches of the answers, making open-world answers and LLM-based graders inapplicable. We instead adopt the VQA-v2 rest-val dataset, the validation dataset in [BEiT-3](https://github.com/microsoft/unilm/tree/master/beit3) and [VLMo](https://github.com/bowen-upenn/unilm/tree/master/vlmo) that was never used for training. It contains 5228 unique image-question pairs. For GQA, we take the same 1000 validation samples used in [ELEGANT](https://arxiv.org/pdf/2310.01356.pdf) for testing.
@@ -108,7 +108,7 @@ datasets/
   
 - Step 4. We allow command-line argparser for the following arguments:
     - ```--vlm_model``` to select the VLM for inference: ```gpt4``` or ```gemini```.
-    - ```---dataset``` to select the dataset: ```gqa``` or ```vqa-v2```.
+    - ```--dataset``` to select the dataset: ```gqa``` or ```vqa-v2```.
     - ```--split``` to select the dataset split: ```val-subset``` for GQA or ```rest-val``` for VQA-v2.
     - ```--verbose``` to print detailed data information and model responses during the inference.
  
