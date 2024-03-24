@@ -6,6 +6,10 @@ We propose an adaptive multi-agent system, named **Multi-Agent VQA**, to overcom
 Unlike existing approaches, our study focuses on the system's performance without fine-tuning it on specific VQA datasets, making it more practical and robust in the open world. 
 We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. 
 
+<p align="center">
+<img src=pipeline.png />
+</p>
+
 ## Disclaimer
 This repository is under development and at present, GPT-4 is the only large vision-language model that our system supports. Although you can find codes for other models like Gemini in this repository, they are either incomplete or haven't been thoroughly tested yet. In this README, you will find instructions on all the available functionalities in the paper and they should work well. Feel free to submit an issue.
 
@@ -113,6 +117,4 @@ datasets/
       python main.py --vlm_model gpt4 --dataset vqa-v2 --split rest-val --verbose
 
   in the command line to start the inference code. All the other hyper-parameters can be set at [config.yaml](config.yaml). Results will be saved under [outputs/](outputs/)
-
-
 
