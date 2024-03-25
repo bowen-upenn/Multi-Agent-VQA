@@ -50,7 +50,11 @@ class Grader:
         # accumulate the grades
         count_match_correct = 0
         for grade in grades:
-            if re.search(r'\[Correct\]', grade):
+            # if re.search(r'\[Correct\]', grade):
+            #     count_match_correct += 1
+            # A match pattern to avoid no [correct] but still correct judgement
+            grade = grade.lower()
+            if re.search(r'\[correct]', grade) or (re.search("correct", grade) and not re.search("incorrect", grade)):
                 count_match_correct += 1
         match_correct = True if count_match_correct >= 2 else False  # majority vote: if at least 2 out of 3 graders agree, the answer is correct
 
