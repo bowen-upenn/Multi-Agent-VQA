@@ -1,4 +1,4 @@
-## This is the official implementation of the paper "Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering" in Pytorch.
+## This is the official implementation of the paper ["Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering"](https://arxiv.org/abs/2403.14783) in Pytorch.
 
 This work explores the **zero-shot** capabilities of **foundation models** in Visual Question Answering (VQA) tasks. 
 We propose an adaptive multi-agent system, named **Multi-Agent VQA**, to overcome the limitations of foundation models in object detection and counting by using specialized agents as tools. 
