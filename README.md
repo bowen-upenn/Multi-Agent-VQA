@@ -4,7 +4,7 @@ This work explores the **zero-shot** capabilities of **foundation models** in Vi
 We propose an adaptive multi-agent system, named **Multi-Agent VQA**, to overcome the limitations of foundation models in object detection and counting by using specialized agents as tools. 
 
 Unlike existing approaches, our study focuses on the system's performance without fine-tuning it on specific VQA datasets, making it more practical and robust in the **open world**. 
-We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. 
+We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. A full paper will be released soon.
 
 <p align="center">
 <img src=pipeline.png />
