@@ -4,7 +4,7 @@ This work explores the **zero-shot** capabilities of **foundation models** in Vi
 We propose an adaptive multi-agent system, named **Multi-Agent VQA**, to overcome the limitations of foundation models in object detection and counting by using specialized agents as tools. 
 
 Unlike existing approaches, our study focuses on the system's performance without fine-tuning it on specific VQA datasets, making it more practical and robust in the **open world**. 
-We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. 
+We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. A full paper will be released soon.
 
 <p align="center">
 <img src=pipeline.png />
@@ -18,6 +18,8 @@ In this README, you will find instructions on all the available functionalities 
 - [ ] 2. Integrate [LLaVA](https://llava-vl.github.io/), [CogVLM](https://github.com/THUDM/CogVLM), and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets.
 - [ ] 3. Explore other tools available. For example, we could use [YOLO-World](https://github.com/AILab-CVC/YOLO-World) as the object-detection agent in our system.
 - [ ] 4. Experiment on more [Visual Question Answering datasets](https://paperswithcode.com/task/visual-question-answering)
+- [ ] 5. Release a more comprehensive zero-shot VQA benchmark in the open world, including comparisons with more recent VQA works.
+- [ ] 6. Release the full version of the paper.
 
 ## Citation
 If you believe our work has inspired your research, please kindly cite our work. Thank you!
