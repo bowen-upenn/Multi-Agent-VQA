@@ -61,27 +61,26 @@ class QueryVLM:
 
     def messages_to_answer_directly_gemini(self, question):
         if self.args['datasets']['dataset'] == 'vqa-v2':
+            # "list each one by [Object i] where i is the index." \
             message = "You are performing a Visual Question Answering task." \
                       "Given the image and the question '" + question + \
                       "', explain what the question wants to ask, what objects or objects with specific attributes is related to the question, " \
                       "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
-                      "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image. " \
-                      "Finally, provide your final answer which starts with the notation '[Answer]'. " \
+                      "Then, your task is to answer the visual question step by step, provide your final answer which starts with the notation '[Answer]' at the end. " \
                       "The correct answer could be an open-ended response, a binary decision between 'yes' and 'no', or a number. So, there are four different cases for the final answer part. " \
                       "(Case 1) If you believe your answer is not an open-ended response, not a number, and should fall into the category of a binary decision between 'yes' and 'no', say 'yes' or 'no' after '[Answer]' based on your decision. " \
                       "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
                       "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
                       "(Case 2) If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
                       "pay attention to whether the question has specified any attributes that only a subset of these objects may satisfy, and objects could be only partially visible." \
-                      "Then, step-by-step describe each object in this image that satisfy the descriptions in the question, " \
-                      "list each one by [Object i] where i is the index." \
+                      "Then, step-by-step describe each object in this image that satisfy the descriptions in the question. " \
                       "If you can't find any of such object, you should answer '[Zero Numeric Answer]' and '[Answer Failed]'. " \
                       "If there are less or equal to three objects in the image, you should start your final answer with '[Numeric Answer]' instead of '[Answer]', answer your predicted number right after '[Numeric Answer]'. " \
-                      "If you believe there are many(larger than three objects) in the image, you should start your final answer with '[Non-zero Numeric Answer] [Answer Failed]' instead of '[Answer]', answer your predicted number right after '[Non-zero Numeric Answer]'. Avoid being too confident. " \
+                      "If you believe there are many(larger than three objects) in the image, you should answer '[Non-zero Numeric Answer] [Answer Failed]' instead of '[Answer]', provide your predicted number right after '[Non-zero Numeric Answer]'. Avoid being too confident. " \
                       "(Case 3) If you believe your answer is an open-ended response(an activity, a noun or an adjective), say the word after '[Answer]'. No extra words after '[Answer]'. " \
                       "(Case 4) If you think you can't answer the question directly, or you need more information, or you find that your answer could be wrong, " \
                       "do not make a guess. Instead, explain why and what you need to solve the question," \
-                      "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'. Keep your answers short."
+                      "like which objects are missing or you need to identify, and answer '[Answer Failed]' instead of '[Answer]'. Keep your answers short."
         else:
             message = "You are performing a Visual Question Answering task." \
                       "Given the image and the question '" + question + "', please first explain what the question wants to ask, what objects or objects with specific attributes" \
@@ -229,12 +228,12 @@ class QueryVLM:
                        "Then, given these additional object descriptions that the model previously missed, summarize all the information and re-attempt to answer the visual question '" + question + "' step by step. " \
                        "Finally, provide your own answer to the question: '" + question + "'. Your final answer should starts with notation '[Reattempted Answer]'." \
                        "Your final answer could be an open-ended response, a binary decision between 'yes' and 'no', or a number. So, there are three different cases for the final answer part. " \
-                       "(Case 1) If you believe your answer is not an open-ended response, not a number, and should fall into the category of a binary decision between 'yes' and 'no', say 'yes' or 'no' after '[Reattempted Answer]'. " \
+                       "(Case 1) If you believe your final answer is not an open-ended response, not a number, and should fall into the category of a binary decision between 'yes' and 'no', say 'yes' or 'no' after '[Reattempted Answer]'. " \
                        "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
                        "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
                        "(Case 2) If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
-                       "step-by-step describe each object in this image that satisfy the descriptions in the question, list each one by [Object i] where i is the index, " \
-                       "and finally re-evaluated and say the number after '[Reattempted Answer]'. Objects could be only partially visible." \
+                       "describe each object in this image that related the descriptions in the question. " \
+                       "Finally re-evaluated and say the number after '[Reattempted Answer]'. Objects could be only partially visible." \
                        "(Case 3) If you believe your answer is an open-ended response(an activity, a noun or an adjective), say the word after '[Reattempted Answer]'. No extra words after '[Reattempted Answer]'"
         else:
             message += "Based on these descriptions and the image, list any geometric, possessive, or semantic relations among the objects above that are crucial for answering the question and ignore the others. "  \

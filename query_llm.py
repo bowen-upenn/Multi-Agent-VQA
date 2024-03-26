@@ -81,7 +81,7 @@ class QueryLLM:
                               "it should be graded as '[Grader 0] [Correct]'. If the VLM's answer contains the correct answer but has additional information not mentioned by the correct answer, it is still '[Correct]'. " 
                               "If the question involves multiple conditions and the correct answer is no, grade the VLM's answer as '[Grader 0] [Correct]' as long as it correctly finds that one of the conditions is not met. "
                               "If the answer is a number, verify if the number is correct. "
-                              "Partially correct is still '[Grader 0] [Correct]'. Otherwise, if the VLM's answer misses the targeted information, grade the answer as '[Grader 0] [Incorrect]'. "
+                              "Partially correct answer or synonyms is still '[Grader 0] [Correct]'. For example, brown and black are synonyms. Otherwise, if the VLM's answer misses the targeted information, grade the answer as '[Grader 0] [Incorrect]'. "
                               "Focus on the part after '[Answer]' or '[Reattempted Answer]'. Reason your grading step by step but keep it short. "},
                 {"role": "user", "content": "The VLM was asked the question: '" + question + "'. "
                                             "The correct answer for the question is: '" + target_answer + "'. "
@@ -90,7 +90,7 @@ class QueryLLM:
         elif grader_id == 1:
             messages = [
                 {"role": "system", "content": "Evaluate the accuracy of a VLM's response to a visual question. "
-                                              "Consider the provided correct answer as a benchmark. If the VLM's response includes the correct answer, even with additional information, rate it as '[Grader 1] [Correct]'. "
+                                              "Consider the provided correct answer as a benchmark. If the VLM's response includes the correct answer, even with additional information, rate it as '[Grader 1] [Correct]'. Partially correct answer or synonyms is still '[Grader 1] [Correct]'. For example, brown and black are synonyms."
                                               "For a question that involves multiple criteria, such as 'Does the image contain a brightly colored and large doll?' and the correct answer is 'No', "
                                               "a response like 'The doll indeed has a bright color but it is not large' that correctly identifies at least one criterion not being met, even if other criteria are met, should be rated as '[Correct]'. " 
                                               "A '[Grader 1] [Correct]' rating applies to answers that are partially right. If the VLM fails to address the key point of the question, mark it as '[Grader 1] [Incorrect]'. "

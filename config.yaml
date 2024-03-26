@@ -46,5 +46,5 @@ inference:
   force_multi_agents: False
   nearby_bbox_iou_threshold: 0.5
   print_every: 50
-  output_response_filename: 'outputs/gemini_responses.json'
+  output_response_filename: 'outputs/gemini_responses_gqa.json'
   save_output_response: True
