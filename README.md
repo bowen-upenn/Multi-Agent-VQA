@@ -14,7 +14,7 @@ We present preliminary experimental results under zero-shot scenarios and highli
 In this README, you will find instructions on all the available functionalities mentioned in the paper and they should work well. However, please understand that this repository is under development and at present, GPT-4 is the only large vision-language model that our system supports. Although you can find codes for other models like Gemini in this repository, they are either incomplete or haven't been thoroughly tested yet. Feel free to submit an issue.
 
 ## TODOs
-- [ ] 1. Integrate [Google Gemini Pro Vision](https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-pro-vision?pli=1) into our system (ongoing).
+- [x] 1. Integrate [Google Gemini Pro Vision](https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-pro-vision?pli=1) into our system (ongoing).
 - [ ] 2. Integrate [LLaVA](https://llava-vl.github.io/), [CogVLM](https://github.com/THUDM/CogVLM), and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets.
 - [ ] 3. Explore other tools available. For example, we could use [YOLO-World](https://github.com/AILab-CVC/YOLO-World) as the object-detection agent in our system.
 - [ ] 4. Experiment on more [Visual Question Answering datasets](https://paperswithcode.com/task/visual-question-answering)
