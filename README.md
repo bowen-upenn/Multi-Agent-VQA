@@ -1,9 +1,11 @@
 ## This is the official implementation of the paper ["Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering"](https://arxiv.org/abs/2403.14783) in Pytorch.
 
+***Key idea: What if a large foundation model fails at VQA? Is fine-tuning the solution? No, use tools and multi-agents!***
+
 This work explores the **zero-shot** capabilities of **foundation models** in Visual Question Answering (VQA) tasks. 
 We propose an adaptive multi-agent system, named **Multi-Agent VQA**, to overcome the limitations of foundation models in object detection and counting by using specialized agents as tools. 
 
-Unlike existing approaches, our study focuses on the system's performance without fine-tuning it on specific VQA datasets, making it more practical and robust in the **open world**. 
+Existing approaches heavily rely on fine-tuning their models on specific VQA datasets with a vocabulary of size 3k. Our study instead focuses on the system's performance without fine-tuning it on specific VQA datasets, making it more practical and robust in the open world. 
 We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. A full paper will be released soon.
 
 <p align="center">
