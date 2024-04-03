@@ -26,10 +26,10 @@ In this README, you will find instructions on all the available functionalities 
 ## Citation
 If you believe our work has inspired your research, please kindly cite our work. Thank you!
 
-      @article{jiang2024multi,
+      @inproceedings{jiang2024multi,
         title={Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering},
         author={Jiang, Bowen and Zhuang, Zhijun and Shivakumar, Shreyas S and Roth, Dan and Taylor, Camillo J},
-        journal={arXiv preprint arXiv:2403.14783},
+        booktitle={arXiv preprint arXiv:2403.14783},
         year={2024}
       }
 
