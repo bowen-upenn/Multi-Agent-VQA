@@ -35,22 +35,27 @@ RUN python setup.py build_ext --inplace
 # Back to the vlm4sgg level for further installations and operations
 WORKDIR /usr/src/app/vlm4sgg
 # Resolve the missing gcc package for the installation of pycocotools
+# setuptools is set to 63.0.0 so the installation of wavedrom==2.0.3 is correctly installed
 RUN apt-get update && apt-get install -y \
     build-essential \
     python3-dev \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir diffusers[torch]==0.15.1 opencv-python==4.7.0.72 \
-    pycocotools==2.0.6 matplotlib==3.5.3 \
+    pycocotools==2.0.6 matplotlib==3.5.3 setuptools==63.0.0 \
     onnxruntime==1.14.1 onnx==1.13.1 ipykernel==6.16.2 scipy gradio openai
 
 # Installing CLIP-Count requirements
 WORKDIR /usr/src/app/vlm4sgg/CLIP_Count
 RUN pip install -r requirements.txt  \
-    && pip install ftfy regex tqdm imgaug einops pytorch-lightning  \
-    && pip install git+https://github.com/openai/CLIP.git
+    && pip install ftfy regex tqdm imgaug einops pytorch-lightning \
+    && pip install git+https://github.com/openai/CLIP.git  \
+    && pip install git+https://github.com/haotian-liu/LLaVA.git
 
 WORKDIR /usr/src/app/vlm4sgg/
+
+# Install Google Cloud AI Platform SDK
+RUN pip install --upgrade google-cloud-aiplatform
 
 # Now, the requirements.txt file is within the build context, so no need to step out.
 COPY requirements.txt ./

@@ -34,14 +34,19 @@ if __name__ == "__main__":
     # Command-line argument parsing
     parser = argparse.ArgumentParser(description='Command line arguments')
     parser.add_argument('--vlm_model', type=str, default="gpt4", help='Set VLM model (gpt4, gemini)')
-    parser.add_argument('--dataset', type=str, default=None, help='Set dataset (gqa, vqa-v2)')
-    parser.add_argument('--split', type=str, default=None, help='Set dataset gqa: val, val-subset, test. vqa-v2: val, rest-val, val1000, test-dev, test-std')
+    parser.add_argument('--dataset', type=str, default=None, help='Set dataset (gqa, vqa-v2, clevr, a-okvqa)')
+    parser.add_argument('--split', type=str, default=None, help='Set dataset split. gqa: val, val-subset, test. '
+                                                                'vqa-v2: val, rest-val, val1000, test-dev, test-std.'
+                                                                'clevr: val, test.'
+                                                                'a-okvqa: val, test.')
+    parser.add_argument('--prompt', type=str, default='baseline', help='Set prompt type (baseline, simple, cot, ps)')
+    parser.add_argument('--multi_agent', dest='multi_agent', action='store_true', help='Use multi-agent pipeline. prompt_type should not be baseline.')
     parser.add_argument('--verbose', dest='verbose', action='store_true', help='Set verbose to True')
     cmd_args = parser.parse_args()
 
     # Override args from config.yaml with command-line arguments if provided
-    args['model'] = cmd_args.vlm_model
-    if args['model'] == 'gemini':
+    args['vlm']['vlm_model'] = cmd_args.vlm_model
+    if args['vlm']['vlm_model'] == 'gemini':
         print("Using Gemini Pro Vision as VLM, initializing the Google Cloud Certificate")
         credential_path = "/raid0/docker-raid/bwjiang/vlm4sgg/LLM_api_keys/multi-agent-vqa-gemini-eb6d477d5c97.json"
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
@@ -49,11 +54,19 @@ if __name__ == "__main__":
         REGION = "us-central1"
         vertexai.init(project=PROJECT_ID, location=REGION)
     args['datasets']['dataset'] = cmd_args.dataset if cmd_args.dataset is not None else args['datasets']['dataset']
+    args['inference']['prompt_type'] = cmd_args.prompt if cmd_args.prompt is not None else args['inference']['prompt_type']
+    args['inference']['multi_agent'] = cmd_args.multi_agent if cmd_args.multi_agent is not None else args['inference']['multi_agent']
+    if args['inference']['prompt_type'] == 'baseline':
+        args['inference']['multi_agent'] = False
     args['inference']['verbose'] = cmd_args.verbose if cmd_args.verbose is not None else args['inference']['verbose']
     if args['datasets']['dataset'] == 'gqa':
         args['datasets']['gqa_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['gqa_dataset_split']
     elif args['datasets']['dataset'] == 'vqa-v2':
         args['datasets']['vqa_v2_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['vqa_v2_dataset_split']
+    elif args['datasets']['dataset'] == 'clevr':
+        args['datasets']['clevr_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['clevr_dataset_split']
+    elif args['datasets']['dataset'] == 'a-okvqa':
+        args['datasets']['a_okvqa_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['a_okvqa_dataset_split']
     else:
         raise ValueError('Invalid dataset name')
 
@@ -70,6 +83,10 @@ if __name__ == "__main__":
         test_dataset = GQADataset(args)
     elif args['datasets']['dataset'] == 'vqa-v2':
         test_dataset = VQAv2Dataset(args)
+    elif args['datasets']['dataset'] == 'clevr':
+        test_dataset = CLEVRDataset(args)
+    elif args['datasets']['dataset'] == 'a-okvqa':
+        test_dataset = AOKVQADataset(args)
     else:
         raise ValueError('Invalid dataset name')
 

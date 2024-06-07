@@ -123,3 +123,59 @@ class VQAv2Dataset(Dataset):
             print(f'{Colors.HEADER}{curr_data}{Colors.ENDC}')
 
         return {'image_id': image_id, 'image_path': image_path, 'question': question, 'question_id': question_id, 'answer': answer}
+
+
+##########################################################
+## TODO: Add Clever and A-OKVQA datasets
+class CLEVRDataset(Dataset):
+    def __init__(self, args, transform=None):
+        self.args = args
+        self.dataset_split = args['datasets']['clevr_dataset_split']
+
+        # UPDATE clevr_val_questions_file, clevr_test_questions_file, and clevr_images_dir in config.yaml
+        if self.dataset_split == 'val':
+            self.questions_file = self.args['datasets']['clevr_val_questions_file']
+        else:
+            self.questions_file = self.args['datasets']['clevr_test_questions_file']
+
+        self.images_dir = self.args['datasets']['clevr_images_dir']
+        self.transform = transform
+        with open(self.questions_file, 'r') as f:
+            self.questions = json.load(f)
+
+    def __len__(self):
+        return len(self.questions)
+
+    def __getitem__(self, idx):
+
+        if self.args['inference']['verbose']:
+            print(f'{Colors.HEADER}{curr_data}{Colors.ENDC}')
+
+        return {}
+
+
+class AOKVQADataset(Dataset):
+    def __init__(self, args, transform=None):
+        self.args = args
+        self.dataset_split = args['datasets']['a_okvqa_dataset_split']
+
+        # UPDATE a_okvqa_val_questions_file, a_okvqa_test_questions_file, and a_okvqa_images_dir in config.yaml
+        if self.dataset_split == 'val':
+            self.questions_file = self.args['datasets']['a_okvqa_val_questions_file']
+        else:
+            self.questions_file = self.args['datasets']['a_okvqa_test_questions_file']
+
+        self.images_dir = self.args['datasets']['a_okvqa_images_dir']
+        self.transform = transform
+        with open(self.questions_file, 'r') as f:
+            self.questions = json.load(f)
+
+    def __len__(self):
+        return len(self.questions)
+
+    def __getitem__(self, idx):
+
+        if self.args['inference']['verbose']:
+            print(f'{Colors.HEADER}{curr_data}{Colors.ENDC}')
+
+        return {}

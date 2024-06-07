@@ -31,7 +31,7 @@ build-image:
 run:
 	docker run --gpus all -it --rm --net=host --privileged \
 	-v /tmp/.X11-unix:/tmp/.X11-unix \
-	-v /raid0/docker-raid/bwjiang:/usr/src/app \
+	-v /pool/bwjiang:/usr/src/app \
 	-v /usr/local/cuda-12.2:/usr/local/cuda:ro \
 	-e DISPLAY=$DISPLAY \
 	--name=vqa_bwjiang \

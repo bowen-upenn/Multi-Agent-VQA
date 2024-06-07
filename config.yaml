@@ -1,5 +1,5 @@
 datasets:
-  dataset: 'vqa-v2' # 'gqa', 'vqa-v2'
+  dataset: 'vqa-v2' # 'gqa', 'vqa-v2', 'clevr', 'a-okvqa'
   gqa_dataset_split: 'val'
   gqa_images_dir: '/tmp/datasets/gqa/images'
   gqa_val_questions_file: '/tmp/datasets/gqa/val_balanced_questions.json'
@@ -17,7 +17,15 @@ datasets:
   vqa_v2_test_questions_file: '/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_test2015_questions.json'
   vqa_v2_test_dev_questions_file: '/tmp/datasets/coco/vqa/v2_OpenEnded_mscoco_test-dev2015_questions.json'
   vqa_v2_answer_list: '/tmp/datasets/coco/vqa/answer_list.json'
-  percent_test: 1 #0.01
+  clevr_dataset_split: 'val'
+  clevr_val_questions_file: ''
+  clevr_test_questions_file: ''
+  clevr_images_dir: ''
+  a_okvqa_dataset_split: 'val'
+  a_okvqa_val_questions_file: ''
+  a_okvqa_test_questions_file: ''
+  a_okvqa_images_dir: ''
+  percent_test: 0.2 #0.01
   num_test_data: 10
   use_num_test_data: False
 sam:
@@ -37,14 +45,17 @@ dino:
   BOX_THRESHOLD: 0.35
   TEXT_THRESHOLD: 0.25
 llm:
-  llm_model: 'gpt-3.5-turbo'
+  llm_model: 'gpt-4-turbo'
 vlm:
+  vlm_model: 'gpt4'
   min_bbox_size: 32
 inference:
   verbose: False
+  multi_agent: True
+  prompt_type: 'baseline' # 'baseline', 'simple', 'cot', 'ps'
   find_nearby_objects: False
   force_multi_agents: False
   nearby_bbox_iou_threshold: 0.5
   print_every: 50
-  output_response_filename: 'outputs/gemini_responses_gqa.json'
+  output_dir: 'outputs/'
   save_output_response: True
