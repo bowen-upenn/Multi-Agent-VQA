@@ -1,5 +1,7 @@
 ## This is the official implementation of the paper ["Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering"](https://arxiv.org/abs/2403.14783) in Pytorch.
 
+**This repository is currently under development, preparing for a full-paper submission, so some functionalities may not work as expected but should offer a good reference. Feel free to post an issue.**
+
 ***Key idea: What if a large foundation model fails at VQA? Is fine-tuning the solution? No, tools and multi-agents are the way to go!***
 
 This work explores the **zero-shot** capabilities of **foundation models** in Visual Question Answering (VQA) tasks. 
