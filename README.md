@@ -1,9 +1,11 @@
 ## This is the official implementation of the paper ["Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering"](https://arxiv.org/abs/2403.14783) in Pytorch.
 
+***Key idea: What if a large foundation model fails at VQA? Is fine-tuning the solution? No, tools and multi-agents are the way to go!***
+
 This work explores the **zero-shot** capabilities of **foundation models** in Visual Question Answering (VQA) tasks. 
 We propose an adaptive multi-agent system, named **Multi-Agent VQA**, to overcome the limitations of foundation models in object detection and counting by using specialized agents as tools. 
 
-Unlike existing approaches, our study focuses on the system's performance without fine-tuning it on specific VQA datasets, making it more practical and robust in the **open world**. 
+Existing approaches heavily rely on fine-tuning their models on specific VQA datasets with a vocabulary of size 3k. Our study instead focuses on the system's performance without fine-tuning it on specific VQA datasets, making it more practical and robust in the open world. 
 We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. A full paper will be released soon.
 
 <p align="center">
@@ -11,11 +13,11 @@ We present preliminary experimental results under zero-shot scenarios and highli
 </p>
 
 ## Disclaimer
-In this README, you will find instructions on all the available functionalities mentioned in the paper and they should work well. However, please understand that this repository is under development and at present, GPT-4 is the only large vision-language model that our system supports. Although you can find codes for other models like Gemini in this repository, they are either incomplete or haven't been thoroughly tested yet. Feel free to submit an issue.
+In this README, you will find instructions on all the available functionalities mentioned in the paper and they should work well. However, please understand that this repository is under development, and we currently only support GPT-4V and Gemini Pro Vision as our large vision-language models. Although you can find codes for other models or functionalities in this repository, they are either incomplete or haven't been thoroughly tested yet. Feel free to submit an issue.
 
 ## TODOs
-- [ ] 1. Integrate [Google Gemini Pro Vision](https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-pro-vision?pli=1) into our system (ongoing).
-- [ ] 2. Integrate [LLaVA](https://llava-vl.github.io/), [CogVLM](https://github.com/THUDM/CogVLM), and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets.
+- [x] 1. Integrate [Google Gemini Pro Vision](https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-pro-vision?pli=1) into our system.
+- [ ] 2. Integrate [LLaVA](https://llava-vl.github.io/), [CogVLM](https://github.com/THUDM/CogVLM), and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets. (ongoing)
 - [ ] 3. Explore other tools available. For example, we could use [YOLO-World](https://github.com/AILab-CVC/YOLO-World) as the object-detection agent in our system.
 - [ ] 4. Experiment on more [Visual Question Answering datasets](https://paperswithcode.com/task/visual-question-answering)
 - [ ] 5. Release a more comprehensive zero-shot VQA benchmark in the open world, including comparisons with more recent VQA works.
@@ -24,13 +26,11 @@ In this README, you will find instructions on all the available functionalities 
 ## Citation
 If you believe our work has inspired your research, please kindly cite our work. Thank you!
 
-      @misc{jiang2024multiagent,
-            title={Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering}, 
-            author={Bowen Jiang and Zhijun Zhuang and Shreyas S. Shivakumar and Dan Roth and Camillo J. Taylor},
-            year={2024},
-            eprint={2403.14783},
-            archivePrefix={arXiv},
-            primaryClass={cs.CV}
+      @inproceedings{jiang2024multi,
+        title={Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering},
+        author={Jiang, Bowen and Zhuang, Zhijun and Shivakumar, Shreyas S and Roth, Dan and Taylor, Camillo J},
+        booktitle={arXiv preprint arXiv:2403.14783},
+        year={2024}
       }
 
 ## Environment
