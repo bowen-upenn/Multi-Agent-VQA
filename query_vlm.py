@@ -10,9 +10,13 @@ import requests
 import concurrent.futures
 from torchvision.ops import box_convert
 import re
+from openai import OpenAI
 # gemini
 from vertexai.preview.generative_models import GenerativeModel
 from vertexai.preview.generative_models import Image as vertexai_Image
+# llava
+import replicate
+
 
 class QueryVLM:
     def __init__(self, args, image_size=512):
@@ -22,13 +26,17 @@ class QueryVLM:
         self.args = args
         self.vlm_type = args["vlm"]['vlm_model']
 
-        with open("openai_key.txt", "r") as api_key_file:
-            self.api_key = api_key_file.read()
-
-        # Init gemini model
-        if self.vlm_type == "gemini":
+        if re.search(r'gemini', self.vlm_type) is not None:
             print("Using Gemini Pro Vision as VLM, initializing the model")
             self.gemini_pro_vision = GenerativeModel("gemini-1.0-pro-vision")
+        elif re.search(r'llava', self.vlm_type) is not None:
+            with open("replicate_key.txt", "r") as llama_key_file:
+                replicate_key = replicate_key_file.read()
+            os.environ['REPLICATE_API_TOKEN'] = replicate_key
+
+        with open("openai_key.txt", "r") as api_key_file:
+            self.api_key = api_key_file.read()
+            os.environ['OPENAI_API_KEY'] = self.api_key
 
     def process_image(self, image, bbox=None):
         # we have to crop the image before converting it to base64
@@ -54,7 +62,7 @@ class QueryVLM:
         _, buffer = cv2.imencode('.jpg', image)
         image_bytes = np.array(buffer).tobytes()
         # gpt4 need decode to base64, but gemini need raw byte
-        if self.vlm_type == "gpt4":
+        if re.search(r'gpt', self.vlm_type) is not None:
             image_bytes = base64.b64encode(image_bytes).decode('utf-8')
 
         return image_bytes
@@ -73,7 +81,7 @@ class QueryVLM:
 
         if self.args['inference']['prompt_type'] == 'baseline':
             # no multi-agent pipeline in this mode. prompt reference https://arxiv.org/pdf/2310.03744
-            message = question + " Begin your answer with '[Answer]' and answer the question using a single word or phrase."
+            message = question + " Answer the question using a single word or phrase."
 
         elif self.args['inference']['prompt_type'] == 'simple':
             message = question + " Begin your answer with '[Answer]'." \
@@ -84,21 +92,21 @@ class QueryVLM:
 
         elif self.args['inference']['prompt_type'] == 'cot':
             # add let's think step by step
-            message = question + " Let's think step by step. Begin your final answer with '[Answer]'." \
+            message = question + " Begin your answer with '[Answer]'." \
                       "If you think you can't answer the question directly, do not make a guess." \
                       "Use the notation '[Answer Failed]' instead of '[Answer]'. " \
                       "Explain why, and say what are missing and what you need in order to solve the question. " + additional_instruction + " " \
-                      "Keep your answer short."
+                      "Let's think step by step. Keep your answer short."
 
         elif self.args['inference']['prompt_type'] == 'ps':
             # plan and solve prompting. prompt reference https://arxiv.org/pdf/2305.04091
-            message = question + " Let's first understand the problem and think step by step. " \
+            message = question + " Let's first understand the problem and make a plan. " \
                       "Explain what the question wants to ask. Make a plan on which objects to focus, identifying key features of these objects or crucial relationships between them within the given image " \
-                      "in order to answer the question. Begin your final answer with '[Answer]'." \
+                      "in order to answer the question. Begin your answer with '[Answer]'." \
                       "If you think you can't answer the question directly, do not make a guess." \
                       "Use the notation '[Answer Failed]' instead of '[Answer]'. " \
                       "Explain why, and say what are missing and what you need in order to solve the question. " + additional_instruction + " " \
-                      "Keep your answer short."
+                      "Let's think step by step. Keep your answer short."
         else:
             raise ValueError('Invalid prompt type')
             # else:
@@ -291,7 +299,7 @@ class QueryVLM:
             raise ValueError('Invalid dataset')
 
         message += "Given these additional descriptions that are previously missed, please re-attempt the question '" + question + "" \
-                   "Begin your final answer with '[Reattempted Answer]'. " + additional_instruction + " Answer the question using a single word or phrase."
+                   "Begin your final answer with '[Reattempted Answer]'. " + additional_instruction + ". Keep your answer short."
 
         # if self.args['datasets']['dataset'] == 'vqa-v2':
         #     # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
@@ -351,68 +359,84 @@ class QueryVLM:
         responses = []
 
         if step == 'reattempt' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
-            if self.vlm_type == "gemini":
-                response = self._query_gemini_pro_vision(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
-                                                     verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
+            if re.search(r'gemini', self.vlm_type) is not None:
+                response = self._query_gemini(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
+                                              verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
+            elif re.search(r'gpt', self.vlm_type) is not None:
+                response = self._query_openai_gpt(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
+                                                  verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
+            elif re.search(r'llava', self.vlm_type) is not None:
+                response = self._query_llava_api(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
+                                                 verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
             else:
-                response = self._query_openai_gpt_4v(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer,
-                                                     verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
+                raise ValueError('Invalid VLM')
             return [response]
 
         # query on a single object
         if len(bboxes) == 1:
             bbox = bboxes.squeeze(0)
             phrase = phrases[0]
-            if self.vlm_type == "gemini":
-                response = self._query_gemini_pro_vision(image, question, step, phrase=phrase, bbox=bbox, verbose=verbose)
+            if re.search(r'gemini', self.vlm_type) is not None:
+                response = self._query_gemini(image, question, step, phrase=phrase, bbox=bbox, verbose=verbose)
+            elif re.search(r'gpt', self.vlm_type) is not None:
+                response = self._query_openai_gpt(image, question, step, phrase=phrase, bbox=bbox, verbose=verbose)
+            elif re.search(r'llava', self.vlm_type) is not None:
+                response = self._query_llava_api(image, question, step, phrase=phrase, bbox=bbox, verbose=verbose)
             else:
-                response = self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox, verbose=verbose)
+                raise ValueError('Invalid VLM')
             responses.append(response)
 
         else:
             # process all objects from the same image in a parallel batch
             total_num_objects = len(bboxes)
             with concurrent.futures.ThreadPoolExecutor(max_workers=total_num_objects) as executor:
-                if self.vlm_type == "gemini":
-                    response = list(executor.map(lambda bbox, phrase: self._query_gemini_pro_vision(image, question, step, phrase=phrase, bbox=bbox, verify_numeric_answer=verify_numeric_answer,
+                if re.search(r'gemini', self.vlm_type) is not None:
+                    response = list(executor.map(lambda bbox, phrase: self._query_gemini(image, question, step, phrase=phrase, bbox=bbox, verify_numeric_answer=verify_numeric_answer,
                                                                                                 needed_objects=needed_objects, verbose=verbose), bboxes, phrases))
+                elif re.search(r'gpt', self.vlm_type) is not None:
+                    response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt(image, question, step, phrase=phrase, bbox=bbox, verify_numeric_answer=verify_numeric_answer,
+                                                                                                needed_objects=needed_objects, verbose=verbose), bboxes, phrases))
+                elif re.search(r'llava', self.vlm_type) is not None:
+                    response = list(executor.map(lambda bbox, phrase: self._query_llava_api(image, question, step, phrase=phrase, bbox=bbox, verify_numeric_answer=verify_numeric_answer,
+                                                                                               needed_objects=needed_objects, verbose=verbose), bboxes, phrases))
                 else:
-                    response = list(executor.map(lambda bbox, phrase: self._query_openai_gpt_4v(image, question, step, phrase=phrase, bbox=bbox, verify_numeric_answer=verify_numeric_answer,
-                                                                                                needed_objects=needed_objects, verbose=verbose), bboxes, phrases))
+                    raise ValueError('Invalid VLM')
                 responses.append(response)
 
         return responses
 
 
-    def _query_openai_gpt_4v(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
+    def _query_openai_gpt(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
         # we have to crop the image before converting it to base64
+        # client = OpenAI()
         base64_image = self.process_image(image, bbox)
 
         if step == 'ask_directly':
             messages = self.messages_to_answer_directly(question)
-            max_tokens = 400
+            max_tokens = 200
         elif step == 'check_numeric_answer':
             messages = self.message_to_check_if_answer_is_numeric(question)
-            max_tokens = 300
+            max_tokens = 200
         elif step == 'attributes':
             if phrase is None or bbox is None:
                 messages = self.messages_to_query_object_attributes(question)
             else:
                 messages = self.messages_to_query_object_attributes(question, phrase)
-            max_tokens = 400
+            max_tokens = 300
         elif step == 'reattempt':
             messages = self.messages_to_reattempt(question, obj_descriptions, prev_answer)
-            max_tokens = 600
+            max_tokens = 300
         else:
             raise ValueError('Invalid step')
+        if len(messages) == 0 or messages is None:
+            messages = " "
 
-        # Retry if GPT response is like "I'm sorry, I cannot assist with this request"
         for _ in range(3):
             # Form the prompt including the image.
             # Due to the strong performance of the vision model, we omit multiple queries and majority vote to reduce costs
             # print('Prompt: ', messages)
             prompt = {
-                "model": "gpt-4-vision-preview",
+                "model": self.vlm_type,
                 "messages": [
                     {
                         "role": "user",
@@ -443,16 +467,15 @@ class QueryVLM:
 
                 if verbose:
                     print(f'VLM Response at step {step}: {completion_text}')
-            else:
-                completion_text = ""
+                return completion_text
 
             if step == 'ask_directly' or (not re.search(r'sorry|cannot assist|can not assist|can\'t assist', completion_text, re.IGNORECASE)):
                 break
 
-        return completion_text
+        return ""
 
 
-    def _query_gemini_pro_vision(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
+    def _query_gemini(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
         byte_image = self.process_image(image, bbox)
         vertexai_image = vertexai_Image.from_bytes(byte_image)
 
@@ -498,3 +521,42 @@ class QueryVLM:
                 break
 
         return completion_text
+
+
+    def _query_llava_api(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
+        # we have to crop the image before converting it to base64
+        base64_image = self.process_image(image, bbox)
+
+        if step == 'ask_directly':
+            messages = self.messages_to_answer_directly(question)
+            # max_tokens = 200
+        elif step == 'check_numeric_answer':
+            messages = self.message_to_check_if_answer_is_numeric(question)
+            # max_tokens = 200
+        elif step == 'attributes':
+            if phrase is None or bbox is None:
+                messages = self.messages_to_query_object_attributes(question)
+            else:
+                messages = self.messages_to_query_object_attributes(question, phrase)
+            # max_tokens = 300
+        elif step == 'reattempt':
+            messages = self.messages_to_reattempt(question, obj_descriptions, prev_answer)
+            # max_tokens = 300
+        else:
+            raise ValueError('Invalid step')
+
+        input = {
+            "image": base64_image,
+            "prompt": messages
+        }
+
+        output = replicate.run(
+            "yorickvp/llava-13b:b5f6212d032508382d61ff00469ddda3e32fd8a0e75dc39d8a4191bb742157fb",
+            input = input
+        )
+        output = "".join(output)
+
+        if verbose:
+            print(f'Gemini VLM Response at step {step}: {output}')
+
+        return output

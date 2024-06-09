@@ -88,6 +88,12 @@ def inference(device, args, test_loader):
                     reattempt_answer = VLM.query_vlm(image, question[0], step='reattempt', obj_descriptions=object_attributes[0], prev_answer=answer[0],
                                                      needed_objects=needed_objects, verbose=args['inference']['verbose'])[0]
 
+                    # make reattempt_answer more concise
+                    if args['inference']['verbose']:
+                        msg = "Making reattempt_answer more concise using a single word or phrase."
+                        print(f'{Colors.WARNING}{msg}{Colors.ENDC}')
+                    reattempt_answer = LLM.query_llm(question, previous_response=reattempt_answer, llm_model=args['llm']['llm_model'], step='summarize_reattempt', verbose=args['inference']['verbose'])
+
                 # grade the answer. vqa-v2 test and test-dev datasets do not have ground truth answers available
                 grades = []
                 for grader_id in range(3):

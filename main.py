@@ -46,9 +46,9 @@ if __name__ == "__main__":
 
     # Override args from config.yaml with command-line arguments if provided
     args['vlm']['vlm_model'] = cmd_args.vlm_model
-    if args['vlm']['vlm_model'] == 'gemini':
+    if re.search(r'gemini', args['vlm']['vlm_model']) is not None:
         print("Using Gemini Pro Vision as VLM, initializing the Google Cloud Certificate")
-        credential_path = "/raid0/docker-raid/bwjiang/vlm4sgg/LLM_api_keys/multi-agent-vqa-gemini-eb6d477d5c97.json"
+        credential_path = "LLM_api_keys/multi-agent-vqa-gemini-eb6d477d5c97.json"
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = credential_path
         PROJECT_ID = "multi-agent-vqa-gemini"
         REGION = "us-central1"

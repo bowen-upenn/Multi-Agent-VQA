@@ -84,6 +84,14 @@ class QueryLLM:
         return messages
 
 
+    def messages_to_summarize_reattempt(self, question, reattempt_answer):
+        messages = [
+            {"role": "system", "content": "Please summarize this answer using a single word or phrase, in order to answer the question: '" + question + "'."
+                                          "Here is the current answer: '" + reattempt_answer + "'."},
+        ]
+        return messages
+
+
     def messages_to_grade_the_answer(self, question, target_answer, model_answer, grader_id=0):
         if grader_id == 0:
             messages = [
@@ -169,6 +177,8 @@ class QueryLLM:
             messages = self.messages_to_extract_related_objects(prompt)
         elif step == 'needed_objects':
             messages = self.messages_to_extract_needed_objects(prompt, previous_response, verify_numeric_answer)
+        elif step == 'summarize_reattempt':
+            messages = self.messages_to_summarize_reattempt(prompt, previous_response)
         elif step == 'grade_answer':
             messages = self.messages_to_grade_the_answer(prompt, target_answer, model_answer, grader_id)
         else:

@@ -47,7 +47,7 @@ dino:
 llm:
   llm_model: 'gpt-4-turbo'
 vlm:
-  vlm_model: 'gpt4'
+  vlm_model: 'gpt-4-turbo' # 'gpt-4o', 'gpt-4-turbo' ('gpt-4-turbo-2024-04-09')
   min_bbox_size: 32
 inference:
   verbose: False
