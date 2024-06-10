@@ -52,10 +52,10 @@ vlm:
 inference:
   verbose: False
   multi_agent: True
-  prompt_type: 'baseline' # 'baseline', 'simple', 'cot', 'ps'
+  prompt_type: 'baseline' # 'baseline', 'baseline_longer', 'simple', 'cot', 'ps'
   find_nearby_objects: False
   force_multi_agents: False
   nearby_bbox_iou_threshold: 0.5
-  print_every: 50
+  print_every: 20
   output_dir: 'outputs/'
   save_output_response: True

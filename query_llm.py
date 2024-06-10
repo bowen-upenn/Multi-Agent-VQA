@@ -45,17 +45,32 @@ class QueryLLM:
         return messages
 
 
+    def messages_to_check_counting_problem(self, question):
+        messages = [
+            {"role": "user",
+             "content": "Does the question '" + question + "' require counting the number of objects in the image, such as 'how many objects are there' or 'what is the number of'? "
+                        "Only consider non-abstract objects. Say '[Yes]' or '[No]'."},
+        ]
+        return messages
+
+
     def messages_to_extract_needed_objects(self, question, previous_response, verify_numeric_answer=False):
         messages = [
-            {"role": "system", "content": "A model encountered difficulties in generating an accurate answer for the question: '" + question + "'. "
-                                          "suggesting that certain objects crucial to answer the question were not detected in the image. "
-                                          "Based on the following previous response: " + previous_response + ", what objects are missing?"     
-                                          "For example, "                                                          
-                                          "Your task is to analyze the model's explanation carefully to identify those objects or attributes. "
-                                          "For questions asking about specific objects (e.g., 'What is the color of the car?'), say 'Car'. "
-                                          "For questions seeking objects with certain attributes (e.g., 'Which object has a bright color?'), say 'bright-colored objects'. "
-                                          "Make sure to include all objects in the question, but ignore those in the previous response irrelevant to the question. "
-                                          "Always list the objects in the following format in a single line: 'Object1 . Object2 . Object3 .'"},
+            {"role": "user",
+             "content": "Would any object detection help with the question '" + question + "' ? If not, simply answer an empty string like ''. "
+                        "If so, extract one to two most important objects mentioned in the question: '" + question + "' "
+                        "and the previous response: '" + previous_response + "' needed for answering the question. "
+                        "For example, if the question asks 'What is the color of the car?', say 'Car'. 'Which object has a bright color?', say 'bright-colored objects'. "                                                                                                                
+                        "Always list the objects in the following format in a single line: 'Object1 . Object2 . Object3 .' No repeated object names, and only non-abstract nouns."},
+            # {"role": "system", "content": "A model encountered difficulties in generating an accurate answer for the question: '" + question + "'. "
+            #                               "suggesting that certain objects crucial to answer the question were not detected in the image. "
+            #                               "Based on the following previous response: " + previous_response + ", what objects are missing?"
+            #                               "For example, "
+            #                               "Your task is to analyze the model's explanation carefully to identify those objects or attributes. "
+            #                               "For questions asking about specific objects (e.g., 'What is the color of the car?'), say 'Car'. "
+            #                               "For questions seeking objects with certain attributes (e.g., 'Which object has a bright color?'), say 'bright-colored objects'. "
+            #                               "Make sure to include all objects in the question, but ignore those in the previous response irrelevant to the question. "
+            #                               "Always list the objects in the following format in a single line: 'Object1 . Object2 . Object3 .'"},
         ]
         # if verify_numeric_answer:
         #     messages = [
@@ -95,47 +110,49 @@ class QueryLLM:
     def messages_to_grade_the_answer(self, question, target_answer, model_answer, grader_id=0):
         if grader_id == 0:
             messages = [
-                {"role": "system", "content": "Please grade the following answer for a visual question answering task in one sentence. "
-                                              "Please understand that the correct answer provided by the dataset is artificially short. Therefore, as long as the target answer is correctly mentioned in the model's answer, "
-                                              "it should be graded as '[Grader 0] [Correct]'. Having additional information is fine. "
-                                              "If the question involves multiple conditions and the correct answer is no, grade the VLM's answer as '[Grader 0] [Correct]' as long as it correctly finds that one of the conditions is not met. "},
-                # {"role": "system", "content": "Please grade the following answer provided by a large vision-language model (VLM) for a visual question answering task in one to two sentences. "
-                #               "Please understand that the correct answer provided by the dataset is artificially too short. Therefore, as long as the correct answer is mentioned in the VLM's answer, "
-                #               "it should be graded as '[Grader 0] [Correct]'. If the VLM's answer contains the correct answer but has additional information not mentioned by the correct answer, it is still '[Correct]'. "
-                #               "If the question involves multiple conditions and the correct answer is no, grade the VLM's answer as '[Grader 0] [Correct]' as long as it correctly finds that one of the conditions is not met. "
-                #               "If the answer is a number, verify if the number is correct. "
-                #               "Partially correct answer or synonyms is still '[Grader 0] [Correct]'. For example, brown and black are synonyms. Otherwise, if the VLM's answer misses the targeted information, grade the answer as '[Grader 0] [Incorrect]'. "
-                #               "Focus on the part after '[Answer]' or '[Reattempted Answer]'. Reason your grading step by step but keep it short. "},
+                # {"role": "system", "content": "Please grade the following answer for a visual question answering task in one sentence. "
+                #                               "Please understand that the correct answer provided by the dataset is artificially short. Therefore, as long as the target answer is correctly mentioned in the model's answer, "
+                #                               "it should be graded as '[Grader 0] [Correct]'. Having additional information is fine. "
+                #                               "If the question involves multiple conditions and the correct answer is no, grade the VLM's answer as '[Grader 0] [Correct]' as long as it correctly finds that one of the conditions is not met. "},
+                {"role": "system", "content": "Please grade the following answer for a visual question answering task in one sentences. "
+                              "Please understand that the correct answer provided by the dataset is artificially too short. Therefore, as long as the correct answer is mentioned in the VLM's answer, "
+                              "it should be graded as '[Grader 0] [Correct]'. If the VLM's answer contains the correct answer but has additional information not mentioned by the correct answer, it is still '[Correct]'. "
+                              "If the question involves multiple conditions and the correct answer is no, grade the VLM's answer as '[Grader 0] [Correct]' as long as it correctly finds that one of the conditions is not met. "
+                              "If the answer is a number, verify if the number is correct. "
+                              "Partially correct answer or synonyms is still '[Grader 0] [Correct]'. For example, brown and black are synonyms. Otherwise, if the VLM's answer misses the targeted information, grade the answer as '[Grader 0] [Incorrect]'. "
+                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. "}, # "Focus on the part after '[Answer]' or '[Reattempted Answer]'."},
                 {"role": "user", "content": "The VLM was asked the question: '" + question + "'. "
                                             "The correct answer for the question is: '" + target_answer + "'. "
                                             "The VLM provided the following answer: '" + model_answer + "'. "},
             ]
         elif grader_id == 1:
             messages = [
-                {"role": "system", "content": "Is the answer provided by the VLM correct for this visual question answering task? Answer '[Grader 1] [Correct]' or '[Grader 1] [Incorrect]'."},
-                # {"role": "system", "content": "Evaluate the accuracy of a VLM's response to a visual question. "
-                #                               "Consider the provided correct answer as a benchmark. If the VLM's response includes the correct answer, even with additional information, rate it as '[Grader 1] [Correct]'."
-                #                               "For a question that involves multiple criteria, such as 'Does the image contain a brightly colored and large doll?' and the correct answer is 'No', "
-                #                               "a response like 'The doll indeed has a bright color but it is not large' that correctly identifies at least one criterion not being met, even if other criteria are met, should be rated as '[Correct]'. "
-                #                               "A '[Grader 1] [Correct]' rating applies to answers that are partially right. If the VLM fails to address the key point of the question, mark it as '[Grader 1] [Incorrect]'. "
-                #                               "If the answer is a number, check if the number is correct. "
-                #                               "Focus on the part after '[Answer]' or '[Reattempted Answer]'. Provide a brief rationale for your evaluation, highlighting the reasoning behind your decision. "},
+                # {"role": "system", "content": "Is the answer provided by the VLM correct for this visual question answering task? Answer '[Grader 1] [Correct]' or '[Grader 1] [Incorrect]'."},
+                {"role": "system", "content": "Evaluate the accuracy of a VLM's response to a visual question in a single sentence. "
+                                              "Consider the provided correct answer as a benchmark. If the VLM's response includes the correct answer, even with additional information, rate it as '[Grader 1] [Correct]'."
+                                              "For a question that involves multiple criteria, such as 'Does the image contain a brightly colored and large doll?' and the correct answer is 'No', "
+                                              "a response like 'The doll indeed has a bright color but it is not large' that correctly identifies at least one criterion not being met, even if other criteria are met, should be rated as '[Correct]'. "
+                                              "A '[Grader 1] [Correct]' rating applies to answers that are partially right. If the VLM fails to address the key point of the question, mark it as '[Grader 1] [Incorrect]'. "
+                                              "If the answer is a number, check if the number is correct. "
+                                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. "},
+                                              # "Focus on the part after '[Answer]' or '[Reattempted Answer]'. "},
                 {"role": "user", "content": "Question posed to the VLM: '" + question + "'. "
                                             "Dataset's correct answer: '" + target_answer + "'. "
                                             "VLM's response: '" + model_answer + "'. "}
             ]
         else:
             messages = [
-                {"role": "system", "content": "Grade the VLM's answer for a visual question answering task in one sentence. "
-                                              "Please note that the dataset's correct answer is deliberately concise. Thus, if the model's response accurately includes the target answer, it should be marked as '[Grader 2] [Correct].' "
-                                              "Additional information in the response is acceptable. "
-                                              "When a question contains multiple conditions and the correct answer is 'no,' the VLM's response should also be rated as '[Grader 2] [Correct]' provided it accurately identifies that at least one condition is unfulfilled."},
-                # {"role": "system", "content": "Assess the response from a VLM on a visual question task. "
-                #                               "Use the dataset's correct answer as the standard. A response should be marked '[Grader 2] [Correct]' if it mentions the correct answer, regardless of additional unrelated details. "
-                #                               "In cases where the question requires satisfying multiple criteria and the answer is negative, the response is '[Correct]' if it correctly finds one criteria that is not met. "
-                #                               "Even partially accurate responses qualify as '[Grader 2] [Correct]'. Mark the response as '[Grader 2] [Incorrect]' only when it overlooks essential details. "
-                #                               "If the answer is a number, grade if the number is correct. "
-                #                               "Focus on the part after '[Answer]' or '[Reattempted Answer]'. Justify your assessment step by step but keep it brief. "},
+                # {"role": "system", "content": "Grade the VLM's answer for a visual question answering task in one sentence. "
+                #                               "Please note that the dataset's correct answer is deliberately concise. Thus, if the model's response accurately includes the target answer, it should be marked as '[Grader 2] [Correct].' "
+                #                               "Additional information in the response is acceptable. "
+                #                               "When a question contains multiple conditions and the correct answer is 'no,' the VLM's response should also be rated as '[Grader 2] [Correct]' provided it accurately identifies that at least one condition is unfulfilled."},
+                {"role": "system", "content": "Assess the response from a VLM on a visual question task in one sentence. "
+                                              "Use the dataset's correct answer as the standard. A response should be marked '[Grader 2] [Correct]' if it mentions the correct answer, regardless of additional unrelated details. "
+                                              "In cases where the question requires satisfying multiple criteria and the answer is negative, the response is '[Correct]' if it correctly finds one criteria that is not met. "
+                                              "Even partially accurate responses qualify as '[Grader 2] [Correct]'. Mark the response as '[Grader 2] [Incorrect]' only when it overlooks essential details. "
+                                              "If the answer is a number, grade if the number is correct. "
+                                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. "},
+                                              # "Focus on the part after '[Answer]' or '[Reattempted Answer]'. "},
                 {"role": "user", "content": "Visual question asked: '" + question + "'. "
                                             "Correct answer according to the dataset: '" + target_answer + "'. "
                                             "Answer provided by the model: '" + model_answer + "'. "}
@@ -175,6 +192,8 @@ class QueryLLM:
             messages = self.message_to_check_if_the_number_is_large(prompt)
         elif step == 'related_objects':
             messages = self.messages_to_extract_related_objects(prompt)
+        elif step == 'check_counting_problem':
+            messages = self.messages_to_check_counting_problem(prompt)
         elif step == 'needed_objects':
             messages = self.messages_to_extract_needed_objects(prompt, previous_response, verify_numeric_answer)
         elif step == 'summarize_reattempt':

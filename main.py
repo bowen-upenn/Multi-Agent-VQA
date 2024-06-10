@@ -56,8 +56,8 @@ if __name__ == "__main__":
     args['datasets']['dataset'] = cmd_args.dataset if cmd_args.dataset is not None else args['datasets']['dataset']
     args['inference']['prompt_type'] = cmd_args.prompt if cmd_args.prompt is not None else args['inference']['prompt_type']
     args['inference']['multi_agent'] = cmd_args.multi_agent if cmd_args.multi_agent is not None else args['inference']['multi_agent']
-    if args['inference']['prompt_type'] == 'baseline':
-        args['inference']['multi_agent'] = False
+    # if args['inference']['prompt_type'] == 'baseline':
+    #     args['inference']['multi_agent'] = False
     args['inference']['verbose'] = cmd_args.verbose if cmd_args.verbose is not None else args['inference']['verbose']
     if args['datasets']['dataset'] == 'gqa':
         args['datasets']['gqa_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['gqa_dataset_split']

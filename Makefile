@@ -34,5 +34,5 @@ run:
 	-v /pool/bwjiang:/usr/src/app \
 	-v /usr/local/cuda-12.2:/usr/local/cuda:ro \
 	-e DISPLAY=$DISPLAY \
-	--name=vqa_bwjiang \
+	--name=vqa_bwjiang_3 \
 	--ipc=host -it vqa_bwjiang

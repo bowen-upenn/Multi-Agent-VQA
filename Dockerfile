@@ -54,7 +54,8 @@ RUN pip install -r requirements.txt  \
 
 WORKDIR /usr/src/app/vlm4sgg/
 
-# Install Google Cloud AI Platform SDK
+# Install Replicate and Google Cloud AI Platform SDK
+RUN pip install replicate
 RUN pip install --upgrade google-cloud-aiplatform
 
 # Now, the requirements.txt file is within the build context, so no need to step out.

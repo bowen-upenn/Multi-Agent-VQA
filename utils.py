@@ -46,7 +46,7 @@ class Grader:
         }
         return accuracy, stat
 
-    def accumulate_grades(self, args, grades, match_baseline_failed):
+    def accumulate_grades(self, args, grades, match_baseline_failed=False, init=False):
         # accumulate the grades
         count_match_correct = 0
         for grade in grades:
@@ -59,11 +59,17 @@ class Grader:
         match_correct = True if count_match_correct >= 2 else False  # majority vote: if at least 2 out of 3 graders agree, the answer is correct
 
         if match_correct:
-            majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
+            if init:
+                majority_vote = 'Init majority vote is [Correct] with a score of ' + str(count_match_correct)
+            else:
+                majority_vote = 'Majority vote is [Correct] with a score of ' + str(count_match_correct)
             if args['inference']['verbose']:
                 print(f'{Colors.OKBLUE}{majority_vote}{Colors.ENDC}')
         else:
-            majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
+            if init:
+                majority_vote = 'Init majority vote is [Incorrect] with a score of ' + str(count_match_correct)
+            else:
+                majority_vote = 'Majority vote is [Incorrect] with a score of ' + str(count_match_correct)
             if args['inference']['verbose']:
                 print(f'{Colors.FAIL}{majority_vote}{Colors.ENDC}')
 
@@ -293,15 +299,20 @@ def write_response_to_json(question_id, response_dict, output_response_filename)
         json.dump(data, file, indent=4)
 
 
-def record_final_accuracy(baseline_accuracy, final_accuracy, stats, output_response_filename):
+def record_final_accuracy(baseline_accuracy, final_accuracy, stats, output_response_filename, init=False):
     # Assuming the JSON file exists at this point
     with open(output_response_filename, 'r') as file:
         data = json.load(file)
 
     # Add the accuracy to the JSON data
-    data['baseline_accuracy'] = str(baseline_accuracy)
-    data['final_accuracy'] = str(final_accuracy)
-    data['stats'] = stats
+    if not init:
+        data['baseline_accuracy'] = str(baseline_accuracy)
+        data['final_accuracy'] = str(final_accuracy)
+        data['stats'] = stats
+    else:
+        data['init_baseline_accuracy'] = str(baseline_accuracy)
+        data['init_final_accuracy'] = str(final_accuracy)
+        data['init_stats'] = stats
 
     # Write the updated data back to the file
     with open(output_response_filename, 'w') as file:
