@@ -1,6 +1,8 @@
 ## This is the official implementation of the paper ["Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering"](https://arxiv.org/abs/2403.14783) in Pytorch.
 
-***Key idea: What if a large foundation model fails at VQA? Is fine-tuning the solution? No, tools and multi-agents are the way to go!***
+Please be aware that we are modifying the system's structure in the ```dev``` branch, fixing some issues and preparing for a full-paper submission within the next month. The current ```main``` branch serves as a code checkpoint. 
+
+***Key idea: What if a large foundation model fails at VQA? Shall we finetune it on our VQA dataset or object detection dataset? No, we should use tools, and tools are experts in their fields.***
 
 This work explores the **zero-shot** capabilities of **foundation models** in Visual Question Answering (VQA) tasks. 
 We propose an adaptive multi-agent system, named **Multi-Agent VQA**, to overcome the limitations of foundation models in object detection and counting by using specialized agents as tools. 
@@ -17,11 +19,12 @@ In this README, you will find instructions on all the available functionalities 
 
 ## TODOs
 - [x] 1. Integrate [Google Gemini Pro Vision](https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-pro-vision?pli=1) into our system.
-- [ ] 2. Integrate [LLaVA](https://llava-vl.github.io/), [CogVLM](https://github.com/THUDM/CogVLM), and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets. (ongoing)
+- [x] 2. Integrate [LLaVA](https://llava-vl.github.io/) and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets. (ongoing)
 - [ ] 3. Explore other tools available. For example, we could use [YOLO-World](https://github.com/AILab-CVC/YOLO-World) as the object-detection agent in our system.
 - [ ] 4. Experiment on more [Visual Question Answering datasets](https://paperswithcode.com/task/visual-question-answering)
-- [ ] 5. Release a more comprehensive zero-shot VQA benchmark in the open world, including comparisons with more recent VQA works.
-- [ ] 6. Release the full version of the paper.
+- [ ] 5. Release synthetic dataset and its automatic generation script.
+- [ ] 6. Release a more comprehensive zero-shot VQA benchmark in the open world, including comparisons with more recent VQA works.
+- [ ] 7. Release the full version of the paper.
 
 ## Citation
 If you believe our work has inspired your research, please kindly cite our work. Thank you!

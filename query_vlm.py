@@ -97,32 +97,6 @@ class QueryVLM:
     def messages_to_answer_directly(self, question):
         if self.args['datasets']['dataset'] == 'vqa-v2':
             # Answers could be 'yes/no', a number, or other open-ended answers in VQA-v2 dataset
-            # message = "Given the image, answer the question '" + question + "'. Begin your answer with '[Answer]'."\
-            #           "If you think you can't answer the question directly, do not make a guess" \
-            #           "Say what you need to solve the question and use the notation '[Answer Failed]' instead of '[Answer]'. " \
-            #           "If the question asks you to count the number of an object, begin your answer with '[Numeric Answer]'." \
-            #           "If you can't find any of such object, you should answer '[Zero Numeric Answer]' and '[Answer Failed]'. " \
-            #           "If there are many of them, you should answer '[Non-zero Numeric Answer]' and '[Answer Failed]'." \
-            #           "Keep your answers short. "
-
-            # message = "You are performing a Visual Question Answering task." \
-            #           "Given the image and the question '" + question + "', explain what the question wants to ask, what objects or objects with specific attributes" \
-            #           "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
-            #           "Then, your task is to answer the visual question step by step, and verify whether your answer is consistent with or against to the image. " \
-            #           "Begin your final answer with the notation '[Answer]'. " \
-            #           "The correct answer could be a 'yes/no', a number, or other open-ended response. " \
-            #           "(Case 1) If you believe your answer falls into the category of 'yes/no', say 'yes/no' after '[Answer]'. " \
-            #           "Understand that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'." \
-            #           "For example, if the image shows a cat with many black areas and you're asked whether the cat is black, you should answer 'yes'. " \
-            #           "(Case 2) If the question asks you to count the number of an object, such as 'how many' or 'what number of', " \
-            #           "pay attention to whether the question has specified any attributes that only a subset of these objects may satisfy, and objects could be only partially visible." \
-            #           "Please step-by-step describe each object in this image that satisfy the descriptions in the question, " \
-            #           "list each one by [Object i] where i is the index, and finally predict the number. " \
-            #           "(Case 3) If the answer should be an activity or a noun, say the word after '[Answer]'. Similarly, no extra words after '[Answer]'. " \
-            #           "(Case 4) If you think you can't answer the question directly or you need more information, or you find that your answer does not pass your own verification and could be wrong, " \
-            #           "do not make a guess, but please explain why and what you need to solve the question," \
-            #           "like which objects are missing or you need to identify, and use the notation '[Answer Failed]' instead of '[Answer]'. Keep your answers short"
-
             message = "You are performing a Visual Question Answering task." \
                       "Given the image and the question '" + question + "', explain what the question wants to ask, what objects or objects with specific attributes" \
                       "you need to look at in the given image to answer the question, and what relations between objects are crucial for answering the question. " \
