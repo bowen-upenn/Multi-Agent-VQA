@@ -1,6 +1,6 @@
 ## This is the official implementation of the paper ["Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering"](https://arxiv.org/abs/2403.14783) in Pytorch.
 
-**This repository is currently under development, preparing for a full-paper submission, so some functionalities may not work as expected but should offer a good reference. Feel free to post an issue.**
+This repository is currently under development, preparing for a full-paper submission, so some functionalities may not work as expected but should offer a good reference. Feel free to post an issue.
 
 ***Key idea: What if a large foundation model fails at VQA? Is fine-tuning the solution? No, tools and multi-agents are the way to go!***
 
@@ -11,7 +11,7 @@ Existing approaches heavily rely on fine-tuning their models on specific VQA dat
 We present preliminary experimental results under zero-shot scenarios and highlight some failure cases, offering new directions for future research. A full paper will be released soon.
 
 <p align="center">
-<img src=pipeline.png />
+<img src=figure.png />
 </p>
 
 ## Disclaimer
@@ -19,11 +19,14 @@ In this README, you will find instructions on all the available functionalities 
 
 ## TODOs
 - [x] 1. Integrate [Google Gemini Pro Vision](https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/gemini-pro-vision?pli=1) into our system.
-- [ ] 2. Integrate [LLaVA](https://llava-vl.github.io/), [CogVLM](https://github.com/THUDM/CogVLM), and other open-sourced large vision-language models into our system, and run inference on the full testing benchmarks of several Visual Question Answering datasets. (ongoing)
+- [x] 2. Integrate [LLaVA](https://llava-vl.github.io/) and other open-sourced large vision-language models into our system
+- [ ] 3. Run inference on the full testing benchmarks of several Visual Question Answering datasets using open-sourced models.
 - [ ] 3. Explore other tools available. For example, we could use [YOLO-World](https://github.com/AILab-CVC/YOLO-World) as the object-detection agent in our system.
 - [ ] 4. Experiment on more [Visual Question Answering datasets](https://paperswithcode.com/task/visual-question-answering)
-- [ ] 5. Release a more comprehensive zero-shot VQA benchmark in the open world, including comparisons with more recent VQA works.
-- [ ] 6. Release the full version of the paper.
+- [ ] 5. Release the synthetic dataset and its automatic generation script
+- [ ] 6. Perform human evaluation
+- [ ] 7. Release a more comprehensive zero-shot VQA benchmark in the open world, including comparisons with more recent VQA works.
+- [ ] 8. Release the full version of the paper.
 
 ## Citation
 If you believe our work has inspired your research, please kindly cite our work. Thank you!
