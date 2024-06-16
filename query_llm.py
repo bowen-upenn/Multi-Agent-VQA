@@ -61,7 +61,7 @@ class QueryLLM:
                         "If so, extract one to two most important objects mentioned in the question: '" + question + "' "
                         "and the previous response: '" + previous_response + "' needed for answering the question. "
                         "For example, if the question asks 'What is the color of the car?', say 'Car'. 'Which object has a bright color?', say 'bright-colored objects'. "                                                                                                                
-                        "Always list the objects in the following format in a single line: 'Object1 . Object2 . Object3 .' No repeated object names, and only non-abstract nouns."},
+                        "Always list the objects in the following format in a single line: 'Object1 . Object2 .' No repeated object names, and only non-abstract nouns."},
             # {"role": "system", "content": "A model encountered difficulties in generating an accurate answer for the question: '" + question + "'. "
             #                               "suggesting that certain objects crucial to answer the question were not detected in the image. "
             #                               "Based on the following previous response: " + previous_response + ", what objects are missing?"
@@ -120,7 +120,7 @@ class QueryLLM:
                               "If the question involves multiple conditions and the correct answer is no, grade the VLM's answer as '[Grader 0] [Correct]' as long as it correctly finds that one of the conditions is not met. "
                               "If the answer is a number, verify if the number is correct. "
                               "Partially correct answer or synonyms is still '[Grader 0] [Correct]'. For example, brown and black are synonyms. Otherwise, if the VLM's answer misses the targeted information, grade the answer as '[Grader 0] [Incorrect]'. "
-                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. "}, # "Focus on the part after '[Answer]' or '[Reattempted Answer]'."},
+                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. Different words with similar meanings are [Correct]."}, # "Focus on the part after '[Answer]' or '[Reattempted Answer]'."},
                 {"role": "user", "content": "The VLM was asked the question: '" + question + "'. "
                                             "The correct answer for the question is: '" + target_answer + "'. "
                                             "The VLM provided the following answer: '" + model_answer + "'. "},
@@ -134,7 +134,7 @@ class QueryLLM:
                                               "a response like 'The doll indeed has a bright color but it is not large' that correctly identifies at least one criterion not being met, even if other criteria are met, should be rated as '[Correct]'. "
                                               "A '[Grader 1] [Correct]' rating applies to answers that are partially right. If the VLM fails to address the key point of the question, mark it as '[Grader 1] [Incorrect]'. "
                                               "If the answer is a number, check if the number is correct. "
-                                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. "},
+                                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. Different words with similar meanings are [Correct]."},
                                               # "Focus on the part after '[Answer]' or '[Reattempted Answer]'. "},
                 {"role": "user", "content": "Question posed to the VLM: '" + question + "'. "
                                             "Dataset's correct answer: '" + target_answer + "'. "
@@ -151,7 +151,7 @@ class QueryLLM:
                                               "In cases where the question requires satisfying multiple criteria and the answer is negative, the response is '[Correct]' if it correctly finds one criteria that is not met. "
                                               "Even partially accurate responses qualify as '[Grader 2] [Correct]'. Mark the response as '[Grader 2] [Incorrect]' only when it overlooks essential details. "
                                               "If the answer is a number, grade if the number is correct. "
-                                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. "},
+                                              "If the target answer is no and the model says the information is inconclusive or hard to determine, it is [Correct]. Different words with similar meanings are [Correct]."},
                                               # "Focus on the part after '[Answer]' or '[Reattempted Answer]'. "},
                 {"role": "user", "content": "Visual question asked: '" + question + "'. "
                                             "Correct answer according to the dataset: '" + target_answer + "'. "

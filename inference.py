@@ -63,7 +63,7 @@ def inference(device, args, test_loader):
 
                         if len(boxes) > 0:
                             # query a large vision-language agent on the attributes of each object instance
-                            object_attributes = VLM.query_vlm(image_path[0], question[0], step='attributes', phrases=phrases, bboxes=boxes, verbose=args['inference']['verbose'])
+                            object_attributes = VLM.query_vlm(image_path[0], question[0], step='attributes', prev_answer=answer[0], phrases=phrases, bboxes=boxes, verbose=args['inference']['verbose'])
 
                             # merge object descriptions as a system prompt and reattempt the visual question answering
                             reattempt_answer = VLM.query_vlm(image_path[0], question[0], step='reattempt', obj_descriptions=object_attributes[0], prev_answer=answer[0],
@@ -88,7 +88,9 @@ def inference(device, args, test_loader):
                 #                                  'needed_objects': needed_objects, 'grades': grades}
                 # else:
 
-                response_dict = {'image_id': str(image_id[0].item()), 'image_path': image_path[0], 'question_id': str(question_id[0].item()), 'question': question[0], 'target_answer': target_answer[0],
+                if args['datasets']['dataset'] == 'vqa-v2':
+                    image_id[0] = image_id[0].item()
+                response_dict = {'image_id': str(image_id[0]), 'image_path': image_path[0], 'question_id': str(question_id[0].item()), 'question': question[0], 'target_answer': target_answer[0],
                                  'match_baseline_failed': match_baseline_failed, 'verify_numeric_answer': verify_numeric_answer, 'initial_answer': answer[0], 'reattempt_answer': reattempt_answer, 'grades': grades}
 
                 if verify_numeric_answer is False:
@@ -105,11 +107,9 @@ def inference(device, args, test_loader):
                     grades.append(LLM.query_llm(question, target_answer=target_answer[0], model_answer=answer[0], step='grade_answer', grader_id=grader_id, verbose=args['inference']['verbose']))
 
                 # record responses to json file
-                # if args['datasets']['dataset'] == 'gqa':
-                #     response_dict = {'image_id': str(image_id[0]), 'image_path': image_path[0], 'question_id': str(question_id[0].item()), 'question': question[0], 'target_answer': target_answer[0],
-                #                      'match_baseline_failed': match_baseline_failed, 'verify_numeric_answer': verify_numeric_answer, 'initial_answer': answer[0], 'grades': grades}
-                # else:
-                response_dict = {'image_id': str(image_id[0].item()), 'image_path': image_path[0], 'question_id': str(question_id[0].item()), 'question': question[0], 'target_answer': target_answer[0],
+                if args['datasets']['dataset'] == 'vqa-v2':
+                    image_id[0] = image_id[0].item()
+                response_dict = {'image_id': str(image_id[0]), 'image_path': image_path[0], 'question_id': str(question_id[0].item()), 'question': question[0], 'target_answer': target_answer[0],
                                  'match_baseline_failed': match_baseline_failed, 'verify_numeric_answer': verify_numeric_answer, 'initial_answer': answer[0], 'grades': grades}
 
             majority_vote = grader.accumulate_grades(args, grades, match_baseline_failed)

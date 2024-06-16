@@ -125,6 +125,50 @@ class VQAv2Dataset(Dataset):
         return {'image_id': image_id, 'image_path': image_path, 'question': question, 'question_id': question_id, 'answer': answer}
 
 
+class VQASyntheticDataset(Dataset):
+    def __init__(self, args, transform=None):
+        self.args = args
+
+        # UPDATE vqa_synthetic_val_questions_file, 
+        # vqa_synthetic_test_questions_dir, vqa_synthetic_images_dir in config.yaml,
+        # and vqa_synthetic_answer_dir
+        self.questions_file = self.args['datasets']['synthetic_data_gpt4_dalle3_questions_file']
+        self.images_dir = self.args['datasets']['synthetic_data_gpt4_dalle3_images_dir']
+        if 'synthetic_data_gpt4_dalle3_answer_file' in self.args['datasets']:
+            self.answer_file = self.args['datasets']['synthetic_data_gpt4_dalle3_answer_file']
+        else:
+            raise KeyError("Key 'synthetic_data_gpt4_dalle3_answer_file' not found in the dataset configuration.")
+        self.description_dir = self.args['datasets']['synthetic_data_gpt4_dalle3_description_dir']
+
+        self.transform = transform
+        with open(self.questions_file, 'r') as f:
+            self.questions = json.load(f)
+            self.questions = self.questions['questions']
+        
+        with open(self.answer_file, 'r') as f:
+            self.answers = json.load(f)
+
+    def __len__(self):
+        return len(self.questions)
+
+    def __getitem__(self, idx):
+        annot = self.questions[idx]
+
+        image_id = annot['image_id']
+        image_path = os.path.join(self.images_dir, f"image_{image_id}.png")
+        # error check: image path exists
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"The image path {image_path} does not exist.")
+        question = annot['question']
+        question_id = annot['question_id']
+        answer = self.answers[str(question_id)]
+
+        if self.args['inference']['verbose']:
+            curr_data = 'image_path: ' + image_path + ' question: ' + question + ' answer: ' + answer
+            print(f'{Colors.HEADER}{curr_data}{Colors.ENDC}')
+
+        return {'image_id': image_id, 'image_path': image_path, 'question': question, 'question_id': question_id, 'answer': answer}
+
 ##########################################################
 ## TODO: Add Clever and A-OKVQA datasets
 class CLEVRDataset(Dataset):

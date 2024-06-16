@@ -38,6 +38,11 @@ class QueryVLM:
             self.api_key = api_key_file.read()
             os.environ['OPENAI_API_KEY'] = self.api_key
 
+        with open("replicate_key.txt", "r") as replicate_key_file:
+            replicate_key = replicate_key_file.read()
+        os.environ['REPLICATE_API_TOKEN'] = replicate_key
+
+
 
     def process_image(self, image_path, bbox=None):
         def _crop_image(bbox, image):
@@ -104,6 +109,8 @@ class QueryVLM:
                                      "Note that the question may not be capture all nuances, so if your answer partially aligns with the question's premises, it is a 'yes'."
                                      # "If the answer should be a number, but you can't find any of such object, you should answer '[Zero Numeric Answer]'. Otherwise, answer '[Non-zero Numeric Answer]'."
         elif self.args['datasets']['dataset'] == 'gqa':
+            additional_instruction = ""
+        elif self.args['datasets']['dataset'] == 'vqa-synthetic-dataset':
             additional_instruction = ""
         else:
             raise ValueError('Invalid dataset')
@@ -336,7 +343,9 @@ class QueryVLM:
     def messages_to_recheck_confidence(self, question, prev_answer):
         message = "Given the following answer from a different user to the question '" + question + "', critic and verify it with the image and " \
                   "say how much you think that this response is correct: '" + prev_answer + "'. " \
-                  "Let us think step by step and answer '[Absolutely Correct]', '[Partially Correct]', '[Not Correct]'. Only mention the single option you choose. " \
+                  "Let us think step by step, show your reasoning, and then answer '[Absolutely Correct]', '[Partially Correct]', '[Not Correct]'. " \
+                  "Only mention the single option you choose and try to be critical. " \
+                  "If the question asks about an object and the previous answer says it can't find any of such objects in the image, NEVER say '[Absolutely Correct]'."
         # message = "Do you need additional help with your previous answer? You must say '[Yes]' or '[No]'. Do not be over-confident or make any guess. " \
         #           "If you couldn't answer the question or you think the previous answer is wrong, you should say '[Yes]', " \
         #           "and list the object names you think that are missing from the image in order to answer the question."
@@ -350,17 +359,19 @@ class QueryVLM:
         return message
 
 
-    def messages_to_query_object_attributes(self, question, phrase=None, verify_numeric_answer=False):
+    def messages_to_query_object_attributes(self, question, prev_answer, phrase=None, verify_numeric_answer=False):
         if verify_numeric_answer:
             message = "Describe the " + phrase + " in each image in one sentence that can help you answer the question '" + question + "' and count the number of " + phrase + " in the image. "
         else:
             # We expect each object to offer a different perspective to solve the question
             # message = "Describe the attributes and the name of the object related to answer the question '" + question + "' in one sentence."
             message = "Describe the attributes and the name of the object in the image in one sentence. " \
-                      "Only mention attributes related to answering the question '" + question + "' , " \
-                      "such as visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
-                      "and semantic attributes like type and current status if applicable. " \
+                      "Focus on affirming or criticizing the statement '" + prev_answer + "' with the image or saying it is just unrelated to the question '" + question + "'. " \
                       "Also talks about its relation with objects in its surrounding backgrounds. "
+                      # "Only mention attributes related to answering the question '" + question + "' , " \
+                      # "such as visual attributes like color, shape, size, materials, and clothes if the object is a person, " \
+                      # "and semantic attributes like type and current status if applicable. " \
+                      # "Focus on affirm or critic the statement '" + prev_answer + "' with the image or saying it is just unrelated. "
             if phrase is not None:
                 message += "Focus on the " + phrase + " and nearby objects. "
 
@@ -383,17 +394,23 @@ class QueryVLM:
                        "If yes, please clearly list contradictory information, and verify it with the complete input image to achieve a consensus. " \
                        "Remember that each object is detected independently, so please rely more on the whole image rather than object descriptions when there is a conflict, " \
                        "and trust more on another user's critic. When needed, revise your answer in one to two sentences in the end. " \
-                       "If there is no contradictory information, keep your initial answer. " \
-                       "Remember that the correct answer to the original question could be an open-ended response, a binary decision between 'yes' and 'no', or a number. " \
-                       "If the answer should be either 'yes' or 'no' and you are uncertain " \
-                       "or the information is inconclusive, insufficient, or indefinite, you should answer 'no'.\n" \
-                       "Finally, answer: '" + question + "' using one to two sentences."
+                       "If there is no contradictory information, keep your initial answer. Do not create new information here. "
+
+            if self.args['datasets']['dataset'] == 'vqa-v2':
+                message += "Remember that the correct answer to the original question could be an open-ended response, a binary decision between 'yes' and 'no', or a number. " \
+                           "If the answer should be either 'yes' or 'no' and you are uncertain " \
+                           "or the information is inconclusive, insufficient, or indefinite, you should answer 'no'.\n"
+
+            message += "Finally, answer: '" + question + "' using a single word or phrase."
         else:
-            message += "Revise your answer in one to two sentences based on another user's critic. " \
-                       "Remember that the correct answer to the original question could be an open-ended response, a binary decision between 'yes' and 'no', or a number. " \
-                       "If the answer should be either 'yes' or 'no' and you are uncertain " \
-                       "or the information is inconclusive, insufficient, or indefinite, you should answer 'no'.\n" \
-                       "Here is the question again: '" + question + "' Answer using one to two sentences."
+            message += "Revise your answer in one to two sentences based on another user's critic. Do not create new information here. "
+
+            if self.args['datasets']['dataset'] == 'vqa-v2':
+                message += "Remember that the correct answer to the original question could be an open-ended response, a binary decision between 'yes' and 'no', or a number. " \
+                           "If the answer should be either 'yes' or 'no' and you are uncertain " \
+                           "or the information is inconclusive, insufficient, or indefinite, you should answer 'no'.\n"
+
+            message += "Here is the question again: '" + question + "' Answer a single word or phrase."
 
 
 
@@ -482,14 +499,14 @@ class QueryVLM:
     def query_vlm(self, image, question, step='attributes', phrases=None, obj_descriptions=None, prev_answer=None, verify_answer=None, bboxes=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
         responses = []
 
-        if step == 'reattempt' or step == 'ask_directly' or bboxes is None or len(bboxes) == 0:
+        if step == 'reattempt' or step == 'ask_directly' or step == 'attributes' or bboxes is None or len(bboxes) == 0:
             if re.search(r'gemini', self.vlm_type) is not None:
                 response = self._query_gemini(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer, verify_answer=verify_answer,
                                               verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
             elif re.search(r'gpt', self.vlm_type) is not None:
                 response = self._query_openai_gpt(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer, verify_answer=verify_answer,
                                                   verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
-            elif re.search(r'llava', self.vlm_type) is not None:
+            elif re.search(r'llava', self.vlm_type) is not None or step == 'attributes':
                 response = self._query_llava_api(image, question, step, obj_descriptions=obj_descriptions, prev_answer=prev_answer, verify_answer=verify_answer,
                                                  verify_numeric_answer=verify_numeric_answer, needed_objects=needed_objects, verbose=verbose)
             else:
@@ -548,9 +565,9 @@ class QueryVLM:
             max_tokens = 200
         elif step == 'attributes':
             if phrase is None or bbox is None:
-                messages = self.messages_to_query_object_attributes(question)
+                messages = self.messages_to_query_object_attributes(question, prev_answer)
             else:
-                messages = self.messages_to_query_object_attributes(question, phrase)
+                messages = self.messages_to_query_object_attributes(question, prev_answer, phrase)
             max_tokens = 300
         elif step == 'reattempt':
             messages = self.messages_to_reattempt(question, obj_descriptions, prev_answer, verify_answer)
@@ -632,7 +649,7 @@ class QueryVLM:
         return ""
 
 
-    def _query_gemini(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
+    def _query_gemini(self, image, question, step, phrase=None, bbox=None, obj_descriptions=None, prev_answer=None, verify_answer=None, verify_numeric_answer=False, needed_objects=None, verbose=False):
         byte_image = self.process_image(image, bbox)
         vertexai_image = vertexai_Image.from_bytes(byte_image)
 
@@ -644,12 +661,12 @@ class QueryVLM:
             max_tokens = 300
         elif step == 'attributes':
             if phrase is None or bbox is None:
-                messages = self.messages_to_query_object_attributes(question)
+                messages = self.messages_to_query_object_attributes(question, prev_answer)
             else:
-                messages = self.messages_to_query_object_attributes(question, phrase)
+                messages = self.messages_to_query_object_attributes(question, prev_answer, phrase)
             max_tokens = 400
         elif step == 'reattempt':
-            messages = self.messages_to_reattempt(question, obj_descriptions, prev_answer)
+            messages = self.messages_to_reattempt(question, obj_descriptions, prev_answer, verify_answer)
             max_tokens = 700
         else:
             raise ValueError('Invalid step')
@@ -691,9 +708,9 @@ class QueryVLM:
             # max_tokens = 200
         elif step == 'attributes':
             if phrase is None or bbox is None:
-                messages = self.messages_to_query_object_attributes(question)
+                messages = self.messages_to_query_object_attributes(question, prev_answer)
             else:
-                messages = self.messages_to_query_object_attributes(question, phrase)
+                messages = self.messages_to_query_object_attributes(question, prev_answer, phrase)
             # max_tokens = 300
         elif step == 'reattempt':
             messages = self.messages_to_reattempt(question, obj_descriptions, prev_answer)

@@ -67,8 +67,8 @@ if __name__ == "__main__":
         args['datasets']['clevr_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['clevr_dataset_split']
     elif args['datasets']['dataset'] == 'a-okvqa':
         args['datasets']['a_okvqa_dataset_split'] = cmd_args.split if cmd_args.split is not None else args['datasets']['a_okvqa_dataset_split']
-    else:
-        raise ValueError('Invalid dataset name')
+    # else:
+    #     raise ValueError('Invalid dataset name')
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     world_size = torch.cuda.device_count()
@@ -87,6 +87,8 @@ if __name__ == "__main__":
         test_dataset = CLEVRDataset(args)
     elif args['datasets']['dataset'] == 'a-okvqa':
         test_dataset = AOKVQADataset(args)
+    elif args['datasets']['dataset'] == 'vqa-synthetic-dataset':
+        test_dataset = VQASyntheticDataset(args)
     else:
         raise ValueError('Invalid dataset name')
 
