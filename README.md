@@ -1,6 +1,8 @@
 ## This is the official implementation of the paper ["Multi-Agent VQA: Exploring Multi-Agent Foundation Models in Zero-Shot Visual Question Answering"](https://arxiv.org/abs/2403.14783) in Pytorch.
 
-Please be aware that we are modifying the system's structure in the ```dev``` branch, fixing some issues and preparing for a full-paper submission within the next month. The current ```main``` branch serves as a code checkpoint. 
+[![Arxiv](https://img.shields.io/badge/ArXiv-Paper-B31B1B)](https://arxiv.org/abs/2403.14783)
+[![Google Scholar](https://img.shields.io/badge/Google_Scholar-Cite_Our_Paper-4085F4)](https://scholar.google.com/scholar?hl=en&as_sdt=0%2C39&q=Multi-Agent+VQA%3A+Exploring+Multi-Agent+Foundation+Models+in+Zero-Shot+Visual+Question+Answering&btnG=#d=gs_cit&t=1724265977916&u=%2Fscholar%3Fq%3Dinfo%3AHY9HN86PLnEJ%3Ascholar.google.com%2F%26output%3Dcite%26scirp%3D0%26hl%3Den)
+[![Workshop](https://img.shields.io/badge/CVPR_2024-CVinW_Workshop_Spotlight-97CA00)](https://computer-vision-in-the-wild.github.io/cvpr-2024/)
 
 ***Key idea: What if a large foundation model fails at VQA? Shall we finetune it on our VQA dataset or object detection dataset? No, we should use tools, and tools are experts in their fields.***
 
